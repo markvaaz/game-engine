@@ -1,4 +1,7 @@
 {
+  "devDependencies": {
+    "electron": "^28.0.0"
+  },
   "name": "game-engine",
   "version": "1.0.0",
   "description": "A simple 2D game engine with javascript canvas",
@@ -68,6 +71,20 @@
     "yallist": "^4.0.0",
     "yauzl": "^2.10.0"
   },
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --windows"
+  },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "build": {
+    "appId": "com.markvaaz.engine",
+    "productName": "Engine",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  }
 }
