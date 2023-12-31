@@ -1,6 +1,6 @@
 import Camera from "../objects/camera.js";
 import GameObject from "../objects/game-object.js";
-import Lights from "../objects/lights.js";
+import Lights from "./lights.js";
 import Physics from "./physics.js";
 
 export default class Scene{
@@ -125,11 +125,11 @@ export default class Scene{
     else gameObject.onCameraView = false;
   }
 
-  beforeUpdate(Time){
+  beforeUpdate = (Time) => {
     this.Camera.beforeUpdate?.(Time);
   }
   
-  update(Time){
+  update = (Time) => {
     this.Camera.defaultUpdate?.(Time);
     this.Camera.update?.(Time);
   
@@ -159,15 +159,15 @@ export default class Scene{
     }
   }
   
-  afterUpdate(Time){
+  afterUpdate = (Time) => {
     this.Camera.afterUpdate?.(Time);
   }
 
-  beforeRender(context){
+  beforeRender = (context) => {
     this.Camera.beforeRender?.(context);
   }
 
-  render(context){
+  render = (context) => {
     for(const layer of this.layers.values()){
       for(const gameObject of layer){
         if (gameObject.destroyed || !gameObject.onCameraView) continue;
@@ -192,7 +192,7 @@ export default class Scene{
     }
   }
 
-  afterRender(context){
+  afterRender = (context) => {
     this.Camera.draw(context);
     this.Lights.renderLights(context, this.Camera);
     this.Camera.endDraw(context);

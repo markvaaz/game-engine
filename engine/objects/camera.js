@@ -1,7 +1,6 @@
 import GameObject from "./game-object.js";
 import Vector from "../engine-components/vector.js";
 import Events from "../engine-components/events.js";
-import Lights from "./lights.js";
 
 export default class Camera extends GameObject{
   #zoomFactor = 0.05;

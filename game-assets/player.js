@@ -54,22 +54,6 @@ export default class Player extends GameObject{
   }
 
   render(context){
-    if(!this.LightSource || true) return;
-    const lightSource = this.LightSource;
-    const position = lightSource.position;
-    const radius = Math.max(this.size.x, this.size.y);
 
-    const gradient = context.createRadialGradient( position.x, position.y, radius, position.x, position.y, 0 );
-    
-    gradient.addColorStop(Math.max(lightSource.start, 0.0), lightSource.color);
-    gradient.addColorStop(Math.min(lightSource.stop, 1.0), "transparent");
-
-    context.save();
-    context.globalAlpha = lightSource.opacity * 0.5;
-    context.fillStyle = gradient;
-    context.beginPath();
-    context.arc(this.position.x, this.position.y, this.size.x / 2, 0, Math.PI * 2);
-    context.fill();
-    context.restore();
   }
 }

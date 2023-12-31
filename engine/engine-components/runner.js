@@ -165,7 +165,7 @@ export default class Runner{
       this.#onSetupCallbacks.delete(id);
     });
 
-    this.loop();
+    requestAnimationFrame(this.loop);
 
     return this;
   }

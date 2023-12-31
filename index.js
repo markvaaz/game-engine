@@ -17,13 +17,14 @@ const { SceneManager, Runner, Events, Vector } = engine;
 const scene = engine.SceneManager.createScene('main');
 
 // scene.Lights.disabled = true;
+scene.Lights.globalLight.enabled = false;
 
 SceneManager.changeScene('main');
 
-Runner.debug = {
-  enabled: true,
-  framesToAverage: 600
-}
+// Runner.debug = {
+//   enabled: true,
+//   framesToAverage: 5
+// }
 
 scene.debug = {
   // enabled: true,
@@ -32,41 +33,23 @@ scene.debug = {
 }
 
 const camera = scene.Camera;
-const obstacle = new Ellipse(30, 30);
 const player = new Player(innerWidth / 2, innerHeight / 2 - 200);
 const map = new GameObject();
 
 map.size.set(2000);
 
-player.add(new LightSource(player, 300));
-// player.LightSource.color = "transparent";
-// player.LightSource.color = "white";
-player.LightSource.mode = "lighter";
+player.add(new LightSource(player, 400));
+// player.LightSource.mode = "lighter";
 // player.LightSource.disabled = true;
 player.LightSource.brightness = 0.5;
+player.LightSource.oscillate = true;
 
-// scene.Lights.globalLight.enabled = false;
-
-obstacle.add(new LightSource(obstacle, 1000));
-
-obstacle.LightSource.color = "rgba(255, 100, 0)";
-// obstacle.LightSource.color = "rgba(255, 255, 255, 0.2)";
-// obstacle.LightSource.color = "rgba(255, 255, 255, 0.5)";
-obstacle.LightSource.oscillate = true;
-
-obstacle.position.set(innerWidth / 2, innerHeight / 2);
-obstacle.debug = {
-  enabled: true,
-  fillColor: "rgba(255, 255, 255)",
-  lineColor: "transparent",
-  centerOfMass: false
-}
-obstacle.RigidBody.static = true;
-obstacle.RigidBody.friction = 0;
+player.LightSource.add([
+  { start: 0, color: "rgba(255, 0, 255, 1)" },
+  { start: 0.7, color: "transparent" }
+]);
 
 scene.add(player);
-scene.add(map);
-// scene.add(obstacle);
 
 function createWall(x, y, width, height) {
   const wall = new Rectangle(width, height);
@@ -82,14 +65,14 @@ const centerY = innerHeight / 2;
 const wallWidth = 2000;
 const wallHeight = 150;
 
-// createWall(centerX - 1000, centerY, wallHeight, wallWidth);
-// createWall(centerX + 1000, centerY, wallHeight, wallWidth);
-// createWall(centerX, centerY - 1000, wallWidth, wallHeight);
-// createWall(centerX, centerY + 1000, wallWidth, wallHeight);
+createWall(centerX - 1000, centerY, wallHeight, wallWidth);
+createWall(centerX + 1000, centerY, wallHeight, wallWidth);
+createWall(centerX, centerY - 1000, wallWidth, wallHeight);
+createWall(centerX, centerY + 1000, wallWidth, wallHeight);
 
-const numBalls = 5;
+const numBalls = 10;
 const balls = [];
-const spawnArea = 1300;
+const spawnArea = 950;
 
 for (let i = 0; i < numBalls; i++) {
   const randomX = Math.random() * (spawnArea * 2) - spawnArea + innerWidth / 2;
@@ -99,7 +82,6 @@ for (let i = 0; i < numBalls; i++) {
 
   newBall.name = "ball"
   newBall.add(new LightSource(newBall, 200));
-  newBall.LightSource.color = "rgba(255, 255, 255, 0.5)";
 
   scene.add(newBall);
   balls.push(newBall);
@@ -158,8 +140,6 @@ Runner.onSetup(() => {
 Runner.onUpdate(Time => {
   document.getElementById('fps').innerText = Runner.frameRate.toFixed(0);
 
-  // player.LightSource.color = `hsl(${Time.frameCount % 360} 100% 50% / 100%)`
-
   if(false){
     rects.forEach((value, key) => {
       if(scene.Physics.SpatialHash.get(key)?.size > 0){
@@ -189,8 +169,6 @@ Events.on("keydown", e => {
     location.reload();
   }
   if(e.key == ' ') {
-    // player.LightSource.disabled = player.LightSource.disabled ? false : true;
-    // obstacle.LightSource.color = "rgb(128, 0, 128, 1)";
     scene.Lights.disabled = !scene.Lights.disabled
   }
 })

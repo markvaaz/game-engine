@@ -140,8 +140,8 @@ export default class Collider{
     const separationVectorA = direction.copy.mult(-separationFactorA);
     const separationVectorB = direction.mult(separationFactorB);
   
-    this.GameObject.position.add(separationVectorA);
-    other.GameObject.position.add(separationVectorB);
+    if(!this.GameObject.RigidBody.static) this.GameObject.position.add(separationVectorA);
+    if(!other.GameObject.RigidBody.static) other.GameObject.position.add(separationVectorB);
   }
 
   afterUpdate(){

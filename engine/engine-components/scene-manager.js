@@ -28,7 +28,7 @@ export default class SceneManager {
 
   setup(){
     this.scenes.forEach(scene => {
-      scene.setup(this.Renderer.context);
+      scene.setup(this.Renderer.buffer);
     });
   }
 
@@ -60,17 +60,17 @@ export default class SceneManager {
     this.afterRender();
   }
 
-  beforeRender = (Time) => {
+  beforeRender = () => {
     this.Renderer.clear();
-    this.#currentScene.beforeRender(this.Renderer.context);
+    this.Renderer.render(this.#currentScene.beforeRender);
   }
 
   render(){
-    
-    this.#currentScene.render(this.Renderer.context);
+    this.Renderer.render(this.#currentScene.render);
   }
 
-  afterRender = (Time) => {
-    this.#currentScene.afterRender(this.Renderer.context);
+  afterRender = () => {
+    this.Renderer.render(this.#currentScene.afterRender);
+    this.Renderer.draw();
   }
 }
