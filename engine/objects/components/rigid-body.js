@@ -156,7 +156,7 @@ export default class RigidBody{
     return this;
   }
 
-  update = (Time) => {
+  update = () => {
     this.velocity.add(this.acceleration);
 
     this.velocity.limit(this.maxSpeed);

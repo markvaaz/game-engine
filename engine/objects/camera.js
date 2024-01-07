@@ -45,8 +45,8 @@ export default class Camera extends GameObject{
 
     return this.#zoomFactor = zoomFactor;
   }
-  get mouse(){ return this.screenToWorld(Events.mouse.position); }
-  get pmouse(){ return this.screenToWorld(Events.mouse.previous); }
+  get mouse(){ return this.screenToWorld(Events.windowMouse.position); }
+  get pmouse(){ return this.screenToWorld(Events.windowMouse.previous); }
   get movement(){ return this.pmouse.sub(this.mouse); }
   get view(){ return this.#view; }
   get bounds(){
@@ -135,6 +135,10 @@ export default class Camera extends GameObject{
     context.translate(-this.position.x, -this.position.y);
   }
 
+  updateSize(width, height){
+    this.size.set(width / this.scale.x, height / this.scale.y);
+  }
+
   // Restore the context to the previous state.
   endDraw(context){
     context.restore();
@@ -204,8 +208,8 @@ export default class Camera extends GameObject{
     }
   }
 
-  updateFollow(Time){
-    if((this.target == null && this.temporaryTarget == null) || Events.mouse.down) return;
+  updateFollow(){
+    if((this.target == null && this.temporaryTarget == null) || Events.windowMouse.down) return;
 
     let target = this.target;
 
@@ -234,7 +238,7 @@ export default class Camera extends GameObject{
 
   // Move the camera with the mouse.
   mousemove = () => {
-    if(this.#mouseSettings.mousemove && Events.mouse.down && Events.mouse.buttons.has(2)){
+    if(this.#mouseSettings.mousemove && Events.windowMouse.down && Events.windowMouse.buttons.has(2)){
       const movement = this.movement.copy;
 
       if(this.#mouseSettings.inverted) movement.mult(-1);
@@ -247,23 +251,21 @@ export default class Camera extends GameObject{
   // Zoom in and out with the mouse wheel.
   wheel = () => {
     if(!this.#mouseSettings.zoom) return;
-    if(Events.mouse.wheel > 0) this.zoomOutToMouse();
-    else if(Events.mouse.wheel < 0) this.zoomInToMouse();
+    if(Events.windowMouse.wheel > 0) this.zoomOutToMouse();
+    else if(Events.windowMouse.wheel < 0) this.zoomInToMouse();
   }
 
   // Update the camera every frame.
-  beforeRender = (Time) => {
-    this.updateFollow(Time);
+  beforeRender = () => {
+    this.updateFollow();
   }
 
-  isWithinBounds(gameObject){
-    if(this.inactive && gameObject.inactive) return gameObject.onCameraView;
-
+  isWithinBounds(bounds, radius){
     const cameraBounds = this.bounds;
-    const objectBounds = gameObject.bounds;
-    let offset = 50;
+    const objectBounds = bounds;
+    let offset = -200;
 
-    if(gameObject.LightSource) offset += gameObject.LightSource.radius;
+    if(!isNaN(radius)) offset += radius;
 
     cameraBounds.min.sub(offset);
     cameraBounds.max.add(offset * 2);
@@ -272,6 +274,20 @@ export default class Camera extends GameObject{
       return true;
     
     else return false;
+  }
+
+  toObject(){
+    return {
+      position: this.position.toObject(),
+      size: this.size.toObject(),
+      scale: this.scale.toObject(),
+      bounds: {
+        min: this.bounds.min.toObject(),
+        max: this.bounds.max.toObject()
+      },
+      rotation: this.#rotation,
+      active: this.active
+    }
   }
 
   reset(){

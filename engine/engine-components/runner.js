@@ -18,6 +18,11 @@ export default class Runner{
   Time = new Time();
   RAF = null;
   averageFPS = 0;
+  minCore = 2;
+
+  constructor(){
+    // if(navigator.hardwareConcurrency < this.minCore) new Error(`Your device only has ${navigator.hardwareConcurrency} cores. The minimum required is ${this.minCore}.`);
+  }
 
   get debug(){ return this.#debug; }
 

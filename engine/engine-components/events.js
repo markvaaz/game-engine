@@ -3,8 +3,9 @@ import Mouse from "./mouse.js";
 class Events{
   static listeners = new Map();
   static keys = new Set();
+  static windowMouse = new Mouse();
   static mouse = new Mouse();
-  static contextmouse = new Mouse();
+  static mouseWheelTimeout = 0;
 
   /**
    * @property {number} length - the number of listeners.
@@ -60,15 +61,25 @@ class Events{
     let eventType = typeof event === "string" ? event : event.type;
 
     if(event.type === "pointerdown"){
-      Events.mouse.down = true;
-      Events.mouse.buttons.add(event.button);
+      Events.windowMouse.down = true;
+      Events.windowMouse.buttons.add(event.button);
     }
     if(event.type === "pointerup"){
-      Events.mouse.down = false;
-      Events.mouse.buttons.delete(event.button);
+      Events.windowMouse.down = false;
+      Events.windowMouse.buttons.delete(event.button);
     }
-    if(event.type === "pointermove") Events.mouse.setPosition(event.offsetX, event.offsetY);
-    if(event.type === "wheel") Events.mouse.wheel = event.deltaY;
+    if(event.type === "pointermove") Events.windowMouse.setPosition(event.offsetX, event.offsetY);
+    if(event.type === "wheel"){
+      Events.windowMouse.wheel = event.deltaY;
+      Events.windowMouse.deltaX = event.deltaX;
+
+      clearTimeout(Events.mouseWheelTimeout);
+
+      Events.mouseWheelTimeout = setTimeout(() => {
+        Events.windowMouse.wheel = 0;
+        Events.windowMouse.deltaX = 0;
+      }, 100);
+    }
     if(event.type === "keydown") Events.keys.add(event.key);
     if(event.type === "keyup") Events.keys.delete(event.key);
 

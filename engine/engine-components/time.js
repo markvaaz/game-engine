@@ -16,6 +16,5 @@ export default class Time{
     this.lastFrameTime = now;
     this.frameRate = 1000.0 / this.deltaTimeMS;
     this.frameCount++;
-    this.frameRateLimit = 60;
   }
 }

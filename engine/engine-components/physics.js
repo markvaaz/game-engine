@@ -40,7 +40,7 @@ export default class Physics{
   }
 
   update(gameObject){
-    if(!gameObject?.has("Collider") || gameObject.destroyed || gameObject.inactive) return;
+    if(!gameObject?.has("Collider") || gameObject.destroyed || !gameObject.active) return;
     this.SpatialHash.update(gameObject);
   }
 
@@ -56,7 +56,7 @@ export default class Physics{
 
   collisions(gameObject){
     if(
-      gameObject.inactive ||
+      !gameObject.active ||
       !gameObject.Collider ||
       gameObject.Collider?.disableCollisions ||
       gameObject.destroyed ||

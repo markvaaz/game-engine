@@ -6,17 +6,17 @@ export default class PolygonShape extends Shape{
 
   constructor(gameObject, sides = 3){
     super(gameObject);
-    this.radius = this.GameObject.size.x / 2;
     this.createShape(sides);
   }
 
   createShape(sides){
     const vertices = [];
+    const radius = this.GameObject.size.x / 2;
 
     for(let i = 0; i < sides; i++){
       const angle = (i * 2 * Math.PI / sides) - (Math.PI / 2);
-      const x = this.radius * Math.cos(angle);
-      const y = this.radius * Math.sin(angle);
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
       vertices.push(new Vector(x, y));
     }
 

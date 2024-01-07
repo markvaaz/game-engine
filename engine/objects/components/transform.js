@@ -15,13 +15,22 @@ export default class Transform{
   previousVelocity = new Vector();
   outputVelocity = new Vector();
   framesWithoutMovement = 0;
-  inactive = false;
+  #active = true;
   previousRotation = 0;
   frames = 0;
 
   constructor(){
     this.position.onChange(this.updateFramesWithoutMovement);
     this.Rotation.onChange(() => this.updateFramesWithoutMovement(true));
+  }
+
+  get active(){
+    return this.#active;
+  }
+
+  set active(value){
+    this.#active = value;
+    this.framesWithoutMovement = 0;
   }
 
   get Rotation(){
@@ -43,22 +52,22 @@ export default class Transform{
     }
   }
 
-  update(Time){
-    this.previousVelocity.set(this.velocity);
-    this.velocity.set(this.position.copy.subtract(this.previousPosition));
-    this.previousPosition.set(this.position);
+  update(){
+    this.previousVelocity.set(this.velocity.x, this.velocity.y);
+    this.velocity.set(this.position.x - this.previousPosition.x, this.position.y - this.previousPosition.y);
+    this.previousPosition.set(this.position.x, this.position.y);
     this.previousRotation = this.rotation;
 
     this.framesWithoutMovement++;
 
     if(this.framesWithoutMovement > 1){
-      this.inactive = true;
+      this.#active = false;
     }
   }
 
   updateFramesWithoutMovement = (rotation = false) => {
     if(rotation){
-      this.inactive = false;
+      this.#active = true;
       return this.framesWithoutMovement = 0;
     }
 
@@ -70,7 +79,7 @@ export default class Transform{
       Math.abs(this.previousPosition.z - this.position.z) > precisionLimit;
 
     if(positionChanged){
-      this.inactive = false;
+      this.#active = true;
       this.framesWithoutMovement = 0;
     }
   }

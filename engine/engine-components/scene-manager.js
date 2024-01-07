@@ -7,7 +7,7 @@ export default class SceneManager {
   #currentScene = null;
 
   createScene(scene){
-    const newScene = new Scene();
+    const newScene = new Scene(this.Renderer);
     newScene.name = scene;
     this.addScene(newScene);
 
@@ -28,7 +28,7 @@ export default class SceneManager {
 
   setup(){
     this.scenes.forEach(scene => {
-      scene.setup(this.Renderer.buffer);
+      scene.setup(this.Renderer.canvas);
     });
   }
 
@@ -41,7 +41,7 @@ export default class SceneManager {
   }
 
   update = (Time) => {
-    this.#currentScene.update(Time);
+    if(this.#currentScene) this.#currentScene.update(Time);
 
     this.scenes.forEach(scene => {
       if(scene.updateOnBackground) scene.update(Time);
@@ -49,28 +49,26 @@ export default class SceneManager {
   }
 
   afterUpdate = (Time) => {
-    this.#currentScene.afterUpdate(Time);
+    if(this.#currentScene) this.#currentScene.afterUpdate(Time);
 
     this.scenes.forEach(scene => {
       if(scene.updateOnBackground) scene.afterUpdate(Time);
     });
 
     this.beforeRender();
-    this.render();
+    this.render(Time);
     this.afterRender();
   }
 
   beforeRender = () => {
-    this.Renderer.clear();
-    this.Renderer.render(this.#currentScene.beforeRender);
+    if(this.#currentScene) this.#currentScene.beforeRender();
   }
 
   render(){
-    this.Renderer.render(this.#currentScene.render);
+    if(this.#currentScene) this.#currentScene.render();
   }
 
   afterRender = () => {
-    this.Renderer.render(this.#currentScene.afterRender);
-    this.Renderer.draw();
+    if(this.#currentScene) this.#currentScene.afterRender?.();
   }
 }

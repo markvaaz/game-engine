@@ -20,18 +20,13 @@ export default class Shape{
     this.setListener();
   }
 
-  get position(){ return this.GameObject.position; }
-  get rotation(){ return this.GameObject.rotation; }
-  set rotation(value){ this.GameObject.rotation = value; }
-  get anchor(){ return this.GameObject.anchor; }
-  get size(){ return this.GameObject.size; }
   get centerOfMass(){ return this.getCenterOfMass(); }
   get bounds(){ return { min: this.#bounds.min.copy, max: this.#bounds.max.copy } }
 
   setListener(){
     this.GameObject.Transform.Rotation.onChange(this.updateVertices);
-    this.position.onChange(this.updateVertices);
-    this.anchor.onChange(this.updateVertices);
+    this.GameObject.position.onChange(this.updateVertices);
+    this.GameObject.Transform.anchor.onChange(this.updateVertices);
     this.GameObject.Transform.Rotation.onChange(this.updateNormalAxes);
   }
 
@@ -72,22 +67,24 @@ export default class Shape{
 
     this.updateNormalAxes();
     this.updateVertices();
+
+    this.GameObject.Render.addVertices(vertices);
   }
 
   replaceVertices = (vertices) => this.addVertices(vertices, true);
 
   addVertex = (vertex) => {
     if(!(vertex instanceof Vector)) return;
-    vertex = vertex.copy;
-    vertex.rotate(this.rotation);
-    vertex.add(this.position);
-    vertex.subtract(this.anchor);
+    
+    vertex.rotate(this.GameObject.rotation);
+    vertex.add(this.GameObject.position);
+    vertex.subtract(this.GameObject.Transform.anchor);
 
     this.vertices.push(vertex);
   }
 
   updateVertices = () => {
-    if(!this.#added || this.GameObject.inactive) return;
+    if(!this.#added || !this.GameObject.active) return;
 
     this.vertices = [];
     
@@ -97,11 +94,11 @@ export default class Shape{
     let maxY = Number.NEGATIVE_INFINITY;
   
     for(let i = 0; i < this.edges.length; i++){
-      const vertex = this.edges[i].copy;
+      const vertex = new Vector(this.edges[i]);
       
-      vertex.rotate(this.rotation);
-      vertex.add(this.position);
-      vertex.subtract(this.anchor);
+      vertex.rotate(this.GameObject.rotation);
+      vertex.add(this.GameObject.position);
+      vertex.subtract(this.GameObject.anchor);
   
       this.vertices.push(vertex);
   
@@ -111,22 +108,24 @@ export default class Shape{
       maxY = Math.max(maxY, vertex.y);
     }
   
-    this.#bounds.min.set(new Vector(minX, minY));
-    this.#bounds.max.set(new Vector(maxX, maxY));
+    this.#bounds.min.set(minX, minY);
+    this.#bounds.max.set(maxX, maxY);
+
+    this.GameObject.Render.updateBounds(this.#bounds);
   }
 
   updateNormalAxes = () => {
     if(!this.#added) return;
 
-    if(this.#added && this.GameObject.inactive) return;
+    if(this.#added && !this.GameObject.active) return;
 
     this.normalAxes = [];
     
     for(let i = 0; i < this.edges.length; i++){
       const j = (i + 1) % this.edges.length;
-      const edge = this.edges[j].copy.rotate(this.rotation).subtract(this.edges[i].rotate(this.rotation));
-      const normal = new Vector(edge.y, -edge.x).normalized;
-      this.normalAxes.push(normal);
+      const edge = this.edges[j].copy.rotate(this.GameObject.rotation).subtract(this.edges[i].rotate(this.GameObject.rotation));
+      edge.y = -edge.y;
+      this.normalAxes.push(edge.normalize());
     }
   }
 
@@ -145,8 +144,8 @@ export default class Shape{
     return this.#centerOfMass.copy.add(this.GameObject.position);
   }
 
-  isWithinBounds = (shape, offset = 0) => {
-    if(!shape) return false;
-    return this.bounds.min.x - offset < shape.bounds.max.x && this.bounds.max.x + offset > shape.bounds.min.x && this.bounds.min.y - offset < shape.bounds.max.y && this.bounds.max.y + offset > shape.bounds.min.y;
+  isWithinBounds = (bounds, offset = 0) => {
+    if(!bounds) return false;
+    return this.bounds.min.x - offset < bounds.max.x && this.bounds.max.x + offset > bounds.min.x && this.bounds.min.y - offset < bounds.max.y && this.bounds.max.y + offset > bounds.min.y;
   }  
 }

@@ -7,25 +7,18 @@ export default class RectangleShape extends Shape{
   constructor(gameObject){
     super(gameObject);
     this.createShape();
+    this.GameObject.Render.shape.type = 'rectangle';
   }
 
   createShape(){
     const vertices = [];
+    const size = this.GameObject.size;
 
-    vertices.push(new Vector(-this.size.x / 2, -this.size.y / 2));
-    vertices.push(new Vector(this.size.x / 2, -this.size.y / 2));
-    vertices.push(new Vector(this.size.x / 2, this.size.y / 2));
-    vertices.push(new Vector(-this.size.x / 2, this.size.y / 2));
+    vertices.push(new Vector(-size.x / 2, -size.y / 2));
+    vertices.push(new Vector(size.x / 2, -size.y / 2));
+    vertices.push(new Vector(size.x / 2, size.y / 2));
+    vertices.push(new Vector(-size.x / 2, size.y / 2));
 
     this.addVertices(vertices);
-  }
-
-  renderShape = (context) => {
-    context.save();
-    context.translate(this.position.x, this.position.y);
-    context.rotate(this.rotation);
-    context.strokeRect(-this.size.x / 2, -this.size.y / 2, this.size.x, this.size.y);
-    context.fillRect(-this.size.x / 2, -this.size.y / 2, this.size.x, this.size.y);
-    context.restore();
   }
 }

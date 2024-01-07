@@ -5,21 +5,26 @@ body{
   background: #333;
 }
 
-#fps{
+#fps, #added-objects{
   --margin: 8px;
   position: absolute;
   top: var(--margin);
   right: var(--margin);
   z-index: 1000;
-  font-size: 1.2em;
+  font-size: 2em;
   font-weight: bold;
-  background: #a13ae6;
+  background: #990000;
   padding: 5px;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 6px;
+}
+
+#added-objects{
+  right: unset;
+  left: var(--margin);
 }
 
 .title{

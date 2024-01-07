@@ -81,13 +81,13 @@ export default class Collider{
   
     for (let i = 0; i < maxLength; i++) {
       if(i < vertices1.length){
-        const projection1 = vertices1[i].dot(axis);
+        const projection1 = axis.dot(vertices1[i]);
         min1 = Math.min(min1, projection1);
         max1 = Math.max(max1, projection1);
       }
   
       if(i < vertices2.length){
-        const projection2 = vertices2[i].dot(axis);
+        const projection2 = axis.dot(vertices2[i]);
         min2 = Math.min(min2, projection2);
         max2 = Math.max(max2, projection2);
       }
@@ -104,7 +104,7 @@ export default class Collider{
   }
 
   detectCollision = (other) => {
-    if(!this.GameObject.Shape.isWithinBounds(other.GameObject.Shape, 1)) return { collided: false };
+    if(!this.GameObject.Shape.isWithinBounds(other.GameObject.Shape.bounds, 1)) return { collided: false };
     return this.getMTV(other);
   }
 
@@ -146,13 +146,11 @@ export default class Collider{
 
   afterUpdate(){
     this.collisions.forEach(other => {
-      if(other.GameObject.destroyed || !this.GameObject.Shape.isWithinBounds(other.GameObject.Shape, 1))
+      if(other.GameObject.destroyed || !this.GameObject.Shape.isWithinBounds(other.GameObject.Shape.bounds, 1))
         return this.collisions.delete(other);
 
       const MTV = this.getMTV(other);
 
-      // if(MTV.collided) this.collision(other, MTV);
-      // else this.collisions.delete(other);
       if(!MTV.collided) this.collisions.delete(other);
     });
   }

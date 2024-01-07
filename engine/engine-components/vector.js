@@ -23,7 +23,7 @@ export default class Vector{
   #constraints = { x: { min: null, max: null }, y: { min: null, max: null } };
   #constrained = false;
   #callbacks = new Set();
-  #changed = null;
+  
   constructor(x, y){
     this.set(x, y);
   }
@@ -211,12 +211,21 @@ export default class Vector{
    * @returns {Vector} A copy of the vector.
    * @readonly
    */
-  get copy(){
-    const copy = new Vector(this.x, this.y);
-    if(this.#constrained) copy.setConstraints(this.#constraints.x.min, this.#constraints.x.max, this.#constraints.y.min, this.#constraints.y.max);
-    // if(this.#locked) copy.lock();
-    return copy;
+  get copy() {
+    if (this.#constrained) {
+      const copy = new Vector(this.x, this.y);
+      copy.setConstraints(
+        this.#constraints.x.min,
+        this.#constraints.x.max,
+        this.#constraints.y.min,
+        this.#constraints.y.max
+      );
+      return copy;
+    } else {
+      return new Vector(this.x, this.y);
+    }
   }
+  
 
   /**
    * @method get locked

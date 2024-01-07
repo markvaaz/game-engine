@@ -1,54 +1,28 @@
 import Camera from "../objects/camera.js";
 import GameObject from "../objects/game-object.js";
-import Lights from "./lights.js";
+import Events from "./events.js";
 import Physics from "./physics.js";
 
 export default class Scene{
   static name = 'Scene';
   name = 'Scene';
-  gameObjects = new Map();
-  layers = new Map();
+  GameObjects = new Map();
+  queueToRender = new Map();
   Cameras = new Map();
   Physics = new Physics();
   Camera = new Camera("Main");
-  Lights = new Lights();
-  #debug = {
-    enabled: false,
-    lineColor: null,
-    lineWidth: null,
-    fillColor: null,
-    position: null,
-    velocity: null,
-    velocityVector: null,
-    centerOfMass: null,
-    vertices: null,
-    line: null,
-    name: null,
-    nameColor: null
-  };
+  addedObjects = 0;
+  globalLight = new GlabalLight(this);
 
-  constructor(){
+  constructor(Renderer){
+    this.Renderer = Renderer;
     this.addCamera(this.Camera);
+    this.Renderer.setup(this.Camera, this.globalLight);
   }
 
-  get debug(){ return this.#debug; }
-
-  set debug(value){
-    if(typeof value !== "object") return;
-    
-    for(const key in value){
-      if(this.#debug[key] !== undefined) this.#debug[key] = value[key];
-    }
-  }
-
-  get SpatialHash(){
-    return this.Physics.SpatialHash;
-  }
-
-  setup(context){
-    this.Camera.draw(context);
-    this.Camera.endDraw(context);
-    this.gameObjects.forEach(gameObject => {
+  setup(canvas){
+    this.Camera.updateSize(canvas.width, canvas.height);
+    this.GameObjects.forEach(gameObject => {
       gameObject.setup?.();
     });
   }
@@ -56,6 +30,8 @@ export default class Scene{
   addCamera(camera){
     this.Cameras.set(camera.name, camera);
     if(!this.Camera) this.Camera = camera;
+
+    camera.updateSize(this.Renderer.canvas.width, this.Renderer.canvas.height);
   }
 
   changeCamera(camera){
@@ -64,25 +40,30 @@ export default class Scene{
 
   add(gameObject){
     if(!(gameObject instanceof GameObject)) return;
-    this.gameObjects.set(gameObject.id, gameObject);
-    
-    gameObject.Scene = this;
 
-    this.setLayer(gameObject);
+    this.addedObjects++;
+
+    if(gameObject.updateMode === "all" || gameObject.updateMode === "world"){
+      this.Physics.add(gameObject);
+      this.GameObjects.set(gameObject.id, gameObject);
+      gameObject.Scene = this;
+    }
+    
+    if(gameObject.updateMode === "all" || gameObject.updateMode === "render") this.Renderer.add(gameObject);
 
     if(gameObject.children.size > 0) gameObject.children.forEach(child => this.add(child));
-
-    this.Physics.add(gameObject);
   }
 
   delete(gameObject){
     if(!(gameObject instanceof GameObject)) return;
 
+    this.addedObjects--;
+
     gameObject.Scene = null;
 
-    this.gameObjects.delete(gameObject.id);
+    this.GameObjects.delete(gameObject.id);
 
-    this.layers.get(gameObject.layer).delete(gameObject);
+    this.Renderer.delete(gameObject);
 
     this.Physics.remove(gameObject);
 
@@ -96,33 +77,19 @@ export default class Scene{
 
   has(gameObject){
     if(!(gameObject instanceof GameObject)) return;
-    return this.gameObjects.has(gameObject.id);
+    return this.GameObjects.has(gameObject.id);
   }
 
-  setLayer(gameObject){
-    if(!this.layers.has(gameObject.layer)) this.layers.set(gameObject.layer, new Set());
-
-    this.layers.get(gameObject.layer).add(gameObject);
-
-    gameObject.previousLayer = gameObject.layer;
-
-    this.sortLayers();
+  updateVisibility(gameObject){
+    if(this.Camera.isWithinBounds(gameObject.bounds, gameObject.LightSource?.radius))
+      gameObject.visible = true;
+    else
+      gameObject.visible = false;
   }
 
-  changeLayer(gameObject){
-    if(gameObject.previousLayer === gameObject.layer) return;
-    this.layers.get(gameObject.previousLayer).delete(gameObject);
-
-    this.setLayer(gameObject);
-  }
-
-  sortLayers(){
-    this.layers = new Map([...this.layers.entries()].sort((a, b) => a[0] - b[0]));
-  }
-
-  checkVisibility(gameObject) {
-    if(this.Camera.isWithinBounds(gameObject)) gameObject.onCameraView = true;
-    else gameObject.onCameraView = false;
+  updateRenderInformation(gameObject){
+    if(gameObject.active && gameObject.updateMode !== "world") this.queueToRender.set(gameObject.id, gameObject.Render);
+    else this.queueToRender.delete(gameObject.id);
   }
 
   beforeUpdate = (Time) => {
@@ -133,17 +100,13 @@ export default class Scene{
     this.Camera.defaultUpdate?.(Time);
     this.Camera.update?.(Time);
   
-    for (const gameObject of this.gameObjects.values()){
+    for (const gameObject of this.GameObjects.values()){
       if(gameObject.destroyed) continue;
   
-      this.checkVisibility(gameObject, Time);
+      this.updateVisibility(gameObject);
       
       gameObject.defaultBeforeUpdate?.(Time);
       gameObject.beforeUpdate?.(Time);
-  
-      this.changeLayer(gameObject, gameObject.layer);
-  
-      // this.Physics.applyPhysics(gameObject);
       
       gameObject.defaultUpdate(Time);
       
@@ -156,45 +119,52 @@ export default class Scene{
       
       this.Physics.collisions(gameObject, Time);
       this.Physics.update(gameObject);
+
+      this.updateRenderInformation(gameObject);
     }
+
+    this.Renderer.update(this.queueToRender);
   }
   
   afterUpdate = (Time) => {
-    this.Camera.afterUpdate?.(Time);
+    
   }
 
-  beforeRender = (context) => {
-    this.Camera.beforeRender?.(context);
+  beforeRender = () => {
+    this.Camera.updateSize(this.Renderer.canvas.width, this.Renderer.canvas.height);
+    this.Camera.beforeRender();
+    Events.mouse.setPosition(this.Camera.mouse);
   }
 
-  render = (context) => {
-    for(const layer of this.layers.values()){
-      for(const gameObject of layer){
-        if (gameObject.destroyed || !gameObject.onCameraView) continue;
-      
-        gameObject.defaultBeforeRender?.(context);
-        gameObject.beforeRender?.(context);
-      
-        this.Camera.draw(context);
+  render = () => {
+    this.Renderer.updateCamera(this.Camera.toObject());
+    this.Renderer.render();
+  }
+}
 
-        if(gameObject.LightSource && !this.Lights.has(gameObject.LightSource)) this.Lights.add(gameObject.LightSource);
+class GlabalLight{
+  #color = "#000000";
+  #brightness = 1;
 
-        gameObject.defaultRender(context);
-        gameObject.render?.(context);
-      
-        if(this.debug.enabled) gameObject.debugRender?.(context, this.debug);
-      
-        this.Camera.endDraw(context);
-      
-        gameObject.defaultAfterRender?.(context);
-        gameObject.afterRender?.(context);
-      }
-    }
+  constructor(scene){
+    this.scene = scene;
   }
 
-  afterRender = (context) => {
-    this.Camera.draw(context);
-    this.Lights.renderLights(context, this.Camera);
-    this.Camera.endDraw(context);
+  get color(){
+    return this.#color;
+  }
+
+  get brightness(){
+    return this.#brightness;
+  }
+
+  set color(color){
+    this.#color = color;
+    this.scene.Renderer.updateLight(this.#color, this.#brightness);
+  }
+
+  set brightness(brightness){
+    this.#brightness = brightness;
+    this.scene.Renderer.updateLight(this.#color, this.#brightness);
   }
 }
