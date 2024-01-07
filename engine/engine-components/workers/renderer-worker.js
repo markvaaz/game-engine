@@ -188,7 +188,7 @@ class RendererWorker{
   /**
    * Translates the rendering context based on the camera properties.
    */
-  translate = () => {
+  translate(){
     const { context } = this;
 
     if(!this.camera.active) return;
@@ -521,6 +521,7 @@ class RendererWorker{
    * @param {number} height - The new height for the canvas and lightCanvas.
    */
   resize(width, height){
+    console.log("resize", width, height);
     this.canvas.width = width;
     this.canvas.height = height;
     this.lightCanvas.width = width;

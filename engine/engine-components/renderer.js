@@ -36,7 +36,7 @@ export default class Renderer {
     this.worker.onmessage = this.onmessage;
 
     // Add window resize event listener
-    window.addEventListener('resize', this.resize);
+    window.addEventListener('resize', () => this.resize());
   }
 
   /**
