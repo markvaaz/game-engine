@@ -475,7 +475,8 @@ class RendererWorker{
     if(light.type === "spot"){
       gradient = context.createRadialGradient(position.x, position.y, radius, position.x, position.y, 0);
     }else if (light.type === "cone"){
-      const direction = new Vector(distance).rotate(light.angle).add(position);
+      const angleFix = Math.PI / 4;
+      const direction = new Vector(distance).rotate(light.angle - angleFix).add(position);
         
       gradient = context.createRadialGradient(
         direction.x, direction.y, scaledRadius, position.x, position.y, 0
@@ -521,7 +522,6 @@ class RendererWorker{
    * @param {number} height - The new height for the canvas and lightCanvas.
    */
   resize(width, height){
-    console.log("resize", width, height);
     this.canvas.width = width;
     this.canvas.height = height;
     this.lightCanvas.width = width;

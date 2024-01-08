@@ -6,6 +6,4 @@ export default class Sprite{
     this.size = this.GameObject.size;
     this.GameObject.Render.sprite.src = imageSrc;
   }
-
-
 }

@@ -4,7 +4,7 @@ export default class Mouse{
   #position = new Vector();
   #previous = new Vector();
   #down = false;
-  #wheel = 0;
+  #wheel = new Vector();
   #buttons = new Set();
 
   /**
@@ -38,10 +38,6 @@ export default class Mouse{
    * @property {number} wheel - the amount the mouse wheel has been scrolled.
    */
   get wheel(){ return this.#wheel }
-  set wheel(value){
-    if(typeof value !== "number") return this.#wheel;
-    this.#wheel = value;
-  }
 
   /**
    * @property {Set} buttons - the buttons that are currently pressed.

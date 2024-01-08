@@ -7,18 +7,21 @@ export default class CapsuleShape extends Shape{
   constructor(gameObject){
     super(gameObject);
     this.createShape();
+    this.GameObject.size.onChange(() => this.createShape());
   }
 
   createShape(){
     const vertices = [];
 
-    const { x, y } = this.GameObject.size;
+    let { x, y } = this.GameObject.size;
+
+    if(x === y) x *= 0.99; // Vertex overlap fix;
 
     const radius = Math.min(x, y) / 2;
 
     const topCircleCenter = new Vector(0, -y / 2 + radius);
     const bottomCircleCenter = new Vector(0, y / 2 - radius);
-    let vertexCount = Math.round(this.size.x * 0.1);
+    let vertexCount = Math.round(x * 0.1);
 
     if(vertexCount % 2 !== 0) vertexCount += 1;
 
@@ -38,6 +41,6 @@ export default class CapsuleShape extends Shape{
       vertices.push(new Vector(x, y));
     }
   
-    this.addVertices(vertices);
+    this.addVertices(vertices, true);
   }
 }

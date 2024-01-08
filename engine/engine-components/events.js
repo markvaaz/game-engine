@@ -70,14 +70,18 @@ class Events{
     }
     if(event.type === "pointermove") Events.windowMouse.setPosition(event.offsetX, event.offsetY);
     if(event.type === "wheel"){
-      Events.windowMouse.wheel = event.deltaY;
-      Events.windowMouse.deltaX = event.deltaX;
+      Events.windowMouse.wheel.x = event.deltaX;
+      Events.windowMouse.wheel.y = event.deltaY;
+      Events.mouse.wheel.x = event.deltaX;
+      Events.mouse.wheel.y = event.deltaY;
 
       clearTimeout(Events.mouseWheelTimeout);
 
       Events.mouseWheelTimeout = setTimeout(() => {
-        Events.windowMouse.wheel = 0;
-        Events.windowMouse.deltaX = 0;
+        Events.windowMouse.wheel.x = 0;
+        Events.windowMouse.wheel.y = 0;
+        Events.mouse.wheel.x = 0;
+        Events.mouse.wheel.y = 0;
       }, 100);
     }
     if(event.type === "keydown") Events.keys.add(event.key);

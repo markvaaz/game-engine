@@ -4,22 +4,53 @@ import Events from "./events.js";
 import Physics from "./physics.js";
 
 export default class Scene{
+  // Define a static property "name" with the value 'Scene'
   static name = 'Scene';
+  
+  // Define an instance property "name" with the value 'Scene'
   name = 'Scene';
+  
+  // Create a new Map object to store game objects
   GameObjects = new Map();
+  
+  // Create a new Map object to store objects to be rendered
   queueToRender = new Map();
+  
+  // Create a new Map object to store cameras
   Cameras = new Map();
+  
+  // Create a new Physics object
   Physics = new Physics();
+  
+  // Create a new Camera object with the name "Main"
   Camera = new Camera("Main");
+  
+  // Initialize the number of added objects to 0
   addedObjects = 0;
-  globalLight = new GlabalLight(this);
+  
+  // Create a new GlobalLight object with a reference to the current Scene object
+  globalLight = new GlobalLight(this);
 
-  constructor(Renderer){
-    this.Renderer = Renderer;
-    this.addCamera(this.Camera);
-    this.Renderer.setup(this.Camera, this.globalLight);
+  /**
+   * Constructor for the class.
+   * @param {Renderer} renderer - The renderer object.
+   */
+  constructor(renderer) {
+    this.Renderer = renderer;
+
+    // Create a new camera object and add it to the scene.
+    this.camera = new Camera();
+    this.addCamera(this.camera);
+
+    // Setup the renderer with the camera and global light.
+    this.Renderer.setup(this.camera, this.globalLight);
   }
 
+  /**
+   * Sets up the canvas for rendering.
+   *
+   * @param {Object} canvas - The canvas element used for rendering.
+   */
   setup(canvas){
     this.Camera.updateSize(canvas.width, canvas.height);
     this.GameObjects.forEach(gameObject => {
@@ -27,6 +58,11 @@ export default class Scene{
     });
   }
 
+  /**
+   * Adds a camera to the scene.
+   *
+   * @param {Camera} camera - The camera to be added.
+   */
   addCamera(camera){
     this.Cameras.set(camera.name, camera);
     if(!this.Camera) this.Camera = camera;
@@ -34,26 +70,44 @@ export default class Scene{
     camera.updateSize(this.Renderer.canvas.width, this.Renderer.canvas.height);
   }
 
+  /**
+   * Changes the camera to the specified camera.
+   *
+   * @param {type} camera - the camera to change to
+   * @return {type} undefined
+   */
   changeCamera(camera){
     this.Camera = this.Cameras.get(camera);
   }
 
+  /**
+   * Add a game object to the scene.
+   *
+   * @param {GameObject} gameObject - The game object to be added.
+   */
   add(gameObject){
     if(!(gameObject instanceof GameObject)) return;
 
     this.addedObjects++;
 
-    if(gameObject.updateMode === "all" || gameObject.updateMode === "world"){
+    const { updateMode, id, children } = gameObject;
+
+    if(updateMode === "all" || updateMode === "world"){
       this.Physics.add(gameObject);
-      this.GameObjects.set(gameObject.id, gameObject);
+      this.GameObjects.set(id, gameObject);
       gameObject.Scene = this;
     }
     
-    if(gameObject.updateMode === "all" || gameObject.updateMode === "render") this.Renderer.add(gameObject);
+    if(updateMode === "all" || updateMode === "render") this.Renderer.add(gameObject);
 
-    if(gameObject.children.size > 0) gameObject.children.forEach(child => this.add(child));
+    if(children.size > 0) children.forEach(child => this.add(child));
   }
 
+  /**
+   * Deletes a game object from the scene.
+   *
+   * @param {GameObject} gameObject - The game object to be deleted.
+   */
   delete(gameObject){
     if(!(gameObject instanceof GameObject)) return;
 
@@ -75,11 +129,22 @@ export default class Scene{
     }
   }
 
+  /**
+   * Checks if the given game object is present in the collection.
+   *
+   * @param {GameObject} gameObject - The game object to check.
+   * @return {boolean} Returns true if the game object is present, false otherwise.
+   */
   has(gameObject){
     if(!(gameObject instanceof GameObject)) return;
     return this.GameObjects.has(gameObject.id);
   }
 
+/**
+ * Updates the visibility of a game object based on its bounds and light source radius.
+ *
+ * @param {GameObject} gameObject - The game object to update visibility for.
+ */
   updateVisibility(gameObject){
     if(this.Camera.isWithinBounds(gameObject.bounds, gameObject.LightSource?.radius))
       gameObject.visible = true;
@@ -87,84 +152,139 @@ export default class Scene{
       gameObject.visible = false;
   }
 
+  /**
+   * Updates the render information for a game object.
+   *
+   * @param {Object} gameObject - The game object to update the render information for.
+   */
   updateRenderInformation(gameObject){
     if(gameObject.active && gameObject.updateMode !== "world") this.queueToRender.set(gameObject.id, gameObject.Render);
     else this.queueToRender.delete(gameObject.id);
   }
 
+  /**
+   * Executes before updating the component.
+   * 
+   * @param {Time} Time - The time value used for updating.
+   */
   beforeUpdate = (Time) => {
     this.Camera.beforeUpdate?.(Time);
   }
   
   update = (Time) => {
+    // Update the default camera
     this.Camera.defaultUpdate?.(Time);
+    // Update the camera
     this.Camera.update?.(Time);
   
+    // Iterate through all game objects
     for (const gameObject of this.GameObjects.values()){
       if(gameObject.destroyed) continue;
   
+      // Update the visibility of the game object
       this.updateVisibility(gameObject);
-      
+  
+      // Call the beforeUpdate functions of the game object
       gameObject.defaultBeforeUpdate?.(Time);
       gameObject.beforeUpdate?.(Time);
-      
+  
+      // Call the defaultUpdate function of the game object
       gameObject.defaultUpdate(Time);
-      
+  
+      // Call the update function of the game object
       gameObject.update?.(Time);
-      
+  
+      // Update the physics of the game object
       this.Physics.update(gameObject);
-
+  
+      // Call the afterUpdate functions of the game object
       gameObject.defaultAfterUpdate?.(Time);
       gameObject.afterUpdate?.(Time);
-      
+  
+      // Perform collision detection with other game objects
       this.Physics.collisions(gameObject, Time);
+      // Update the physics of the game object again (if necessary)
+  
       this.Physics.update(gameObject);
-
+  
+      // Update render information for the game object
       this.updateRenderInformation(gameObject);
     }
-
+  
+    // Update the renderer with the queue of objects to render
     this.Renderer.update(this.queueToRender);
   }
-  
-  afterUpdate = (Time) => {
-    
-  }
 
+  /**
+   * Updates the size of the camera and invokes the beforeRender method of the camera.
+   */
   beforeRender = () => {
     this.Camera.updateSize(this.Renderer.canvas.width, this.Renderer.canvas.height);
     this.Camera.beforeRender();
+
+    //Sets the position of the mouse based on the camera's mouse position.
     Events.mouse.setPosition(this.Camera.mouse);
   }
 
+  /**
+   * Renders the scene using the Renderer object.
+   *
+   * @return {undefined} This function does not return a value.
+   */
   render = () => {
     this.Renderer.updateCamera(this.Camera.toObject());
     this.Renderer.render();
   }
 }
 
-class GlabalLight{
+/**
+ * Represents a GlobalLight object.
+ */
+class GlobalLight {
   #color = "#000000";
-  #brightness = 1;
+  #brightness = 1.0;
 
-  constructor(scene){
+  /**
+   * Creates a new GlobalLight instance.
+   * @param {Scene} scene - The scene to which the light belongs.
+   */
+  constructor(scene) {
     this.scene = scene;
   }
 
-  get color(){
+  /**
+   * Gets the color of the light.
+   * @returns {string} - The color of the light.
+   */
+  get color() {
     return this.#color;
   }
 
-  get brightness(){
+  /**
+   * Gets the brightness of the light.
+   * @returns {number} - The brightness of the light.
+   */
+  get brightness() {
     return this.#brightness;
   }
 
-  set color(color){
+  /**
+   * Sets the color of the light.
+   * @param {string} color - The new color of the light.
+   */
+  set color(color) {
     this.#color = color;
+    // Update the light in the renderer
     this.scene.Renderer.updateLight(this.#color, this.#brightness);
   }
 
-  set brightness(brightness){
+  /**
+   * Sets the brightness of the light.
+   * @param {number} brightness - The new brightness of the light.
+   */
+  set brightness(brightness) {
     this.#brightness = brightness;
+    // Update the light in the renderer
     this.scene.Renderer.updateLight(this.#color, this.#brightness);
   }
 }

@@ -13,7 +13,7 @@ body{
   z-index: 1000;
   font-size: 2em;
   font-weight: bold;
-  background: #990000;
+  /* background: #990000; */
   padding: 5px;
   color: #fff;
   display: flex;
@@ -36,6 +36,36 @@ body{
   color: #fff;
   font-size: 80px;
   text-shadow: 0 0 30px #000;
+}
+
+#message{
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 15px;
+  font-size: 2em;
+  color: #fff;
+  font-weight: bold;
+  background: rgba(0, 0, 0);
+  animation-delay: 3s;
+  animation-duration: 3s;
+  animation-name: fade-out;
+  animation-fill-mode: forwards;
+}
+
+/* animation to fade out the #message element */
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 canvas {

@@ -8,6 +8,8 @@ export default class RectangleShape extends Shape{
     super(gameObject);
     this.createShape();
     this.GameObject.Render.shape.type = 'rectangle';
+
+    this.GameObject.size.onChange(() => this.createShape());
   }
 
   createShape(){
@@ -19,6 +21,6 @@ export default class RectangleShape extends Shape{
     vertices.push(new Vector(size.x / 2, size.y / 2));
     vertices.push(new Vector(-size.x / 2, size.y / 2));
 
-    this.addVertices(vertices);
+    this.addVertices(vertices, true);
   }
 }

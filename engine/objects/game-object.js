@@ -3,34 +3,62 @@ import Render from "./components/render.js";
 import Transform from "./components/transform.js";
 
 export default class GameObject {
-  static name = 'GameObject';
-  name = 'GameObject';
-  components = new Map();
-  children = new Map();
-  collidesOnlyWith = new Set();
-  ignoredCollisions = new Set();
-  triggerOnlyCollisions = new Set();
-  destroyed = false;
-  Scene = null;
-  visible = true;
-  updateMode = "all";
-  #layer = 0;
-  #id = "";
+   // The name of the game object
+   static name = 'GameObject';
+    
+   // The name of the game object (instance property)
+   name = 'GameObject';
+   
+   // A map to store the components of the game object
+   components = new Map();
+   
+   // A map to store the children of the game object
+   children = new Map();
+   
+   // A set to store the game object's collision targets
+   collidesOnlyWith = new Set();
+   
+   // A set to store the game object's ignored collisions
+   ignoredCollisions = new Set();
+   
+   // A set to store the game object's trigger-only collisions
+   triggerOnlyCollisions = new Set();
+   
+   // Indicates if the game object is destroyed or not
+   destroyed = false;
+   
+   // The scene the game object belongs to
+   Scene = null;
+   
+   // Indicates if the game object is visible or not
+   visible = true;
+   
+   // The update mode of the game object
+   updateMode = "all";
+   
+   // Private field to store the layer of the game object
+   #layer = 0;
+   
+   // Private field to store the ID of the game object
+   #id = null;
   
   constructor(){
     this.add(new Transform(this));
     this.add(new Render(this));
   }
 
+  /**
+   * Returns the id of the object.
+   *
+   * @return {string} The id generated for the object.
+   */
   get id(){
-    if(this.#id === "") for(let i = 0; i < 10; i++) this.#id += "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?,.;:[]{}|~".charAt(Math.floor(Math.random() * "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?,.;:[]{}|~".length));
+    if(this.#id === null) for(let i = 0; i < 10; i++) this.#id += "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?,.;:[]{}|~".charAt(Math.floor(Math.random() * "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?,.;:[]{}|~".length));
     return this.#id;
   }
 
   get position(){ return this.Transform.position; }
-  get previousPosition(){ return this.Transform.previousPosition; }
   get relativePosition(){ return this.Transform.relativePosition; }
-  get velocity(){ return this.Transform.velocity; }
   get rotation(){ return this.Transform.rotation; }
   set rotation(value){ this.Transform.rotation = value; }
   get anchor(){ return this.Transform.anchor; }
@@ -42,7 +70,6 @@ export default class GameObject {
   }
   get zIndex(){ return this.layer; }
   set zIndex(value){ this.layer = value; }
-  get framesWithoutMovement(){ return this.Transform.framesWithoutMovement; }
   get active(){ return this.Transform.active; }
   set active(value){ this.Transform.active = value; }
   get bounds(){
@@ -50,29 +77,54 @@ export default class GameObject {
     return this.Transform.bounds;
   }
 
-  add(component){
-    if(component instanceof GameObject){
+  /**
+   * Adds a component to the parent game object.
+   * 
+   * @param {GameObject} component - The component to be added.
+   * @returns {GameObject} The parent game object.
+   */
+  add(component) {
+    if (component instanceof GameObject) {
+      // Set the parent of the component
       component.Parent = this;
 
+      // Add the component to the trigger-only collisions set of the parent and the component itself
       this.triggerOnlyCollisions.add(component);
       component.triggerOnlyCollisions.add(this);
       
+      // Add the component to the children map of the parent game object
       return this.children.set(component.id, component);
     }
 
+    // Add the component to the parent game object using its name as a property
     this[component.name] = component;
+
+    // Add the component to the components map of the parent game object
     this.components.set(component.name, component);
   }
 
+  /**
+   * Removes a component from the game object.
+   * If the component is an instance of GameObject, it's parent is set to null and it's removed from the children collection.
+   * Otherwise, the component is removed from the object's properties and the components collection.
+   * @param {GameObject|any} component - The component to be removed.
+   */
   delete(component) {
-    if(component instanceof GameObject){
+    if (component instanceof GameObject) {
       component.Parent = null;
-      return this.children.delete(component.id);
+      return this.children.delete(component.id); // Remove component from children collection
     }
-    delete this[component.name];
-    this.components.delete(component.name);
+
+    delete this[component.name]; // Remove component from object's properties
+    this.components.delete(component.name); // Remove component from components collection
   }
 
+  /**
+   * Checks if the given component exists in the game object.
+   *
+   * @param {GameObject|string} component - The component to check. Can be either a GameObject instance or a string representing the component's name.
+   * @return {boolean} Returns true if the component exists in the game object, otherwise returns false.
+   */
   has(component){
     if(component instanceof GameObject){
       return this.children.has(component.id);
@@ -81,10 +133,18 @@ export default class GameObject {
     return this.components.has(component.name);
   }
 
+  /**
+   * Destroys the object by setting the 'destroyed' flag to true.
+   */
   destroy(){
     this.destroyed = true;
   }
 
+  /**
+   * Execute the 'beforeUpdate' method on each component in the 'components' array if it exists.
+   *
+   * @param {Time} Time - the time parameter to be passed to the 'beforeUpdate' method of each component
+   */
   defaultBeforeUpdate(Time){
     this.components.forEach(component => {
       if(this.destroyed) return;
@@ -92,6 +152,11 @@ export default class GameObject {
     }); 
   }
 
+  /**
+   * Updates all components in the list with the given time.
+   *
+   * @param {type} Time - the time to update the components with
+   */
   defaultUpdate(Time){
     this.components.forEach(component => {
       if(this.destroyed) return;
@@ -99,6 +164,13 @@ export default class GameObject {
     });
   }
 
+  /**
+   * Calls the afterUpdate method on all the components in the component list
+   * and updates the position of all the children based on the parent's position.
+   *
+   * @param {Time} Time - The time object used for updating components.
+   * @return {void} This function does not return a value.
+   */
   defaultAfterUpdate(Time){
     this.components.forEach(component => {
       if(this.destroyed) return;
@@ -112,146 +184,4 @@ export default class GameObject {
       child.position.set(this.Transform.position.copy.add(child.relativePosition));
     });
   }
-
-  // debugRender(context, debug = {}){
-  //   if(!this.Shape || this.Shape.vertices.length === 0) return;
-
-  //   const lineColor = debug.lineColor || this.debug.lineColor;
-  //   const fillColor = debug.fillColor || this.debug.fillColor;
-  //   const vertices = this.Shape.vertices;
-    
-  //   context.save();
-
-  //   context.beginPath();
-  //   context.fillStyle = fillColor;
-  //   context.strokeStyle = lineColor;
-  //   context.lineWidth = debug.lineWidth || this.debug.lineWidth;
-
-  //   if(!this.Shape.renderShape){ 
-  //     context.moveTo(vertices[0].x, vertices[0].y);
-
-  //     for(let i = 1; i < vertices.length; i++){
-  //       context.lineTo(vertices[i].x, vertices[i].y);
-  //     }
-
-  //     context.closePath();
-  //     context.fill();
-  //     context.stroke();
-  //   }else this.Shape.renderShape(context);
-
-  //   const centerOfMass = this.Shape.centerOfMass;    
-
-  //   // draw center of mass
-  //   if(debug.centerOfMass || this.debug.centerOfMass){
-  //     let color = this.Collider?.collisions?.size > 0 ? 'rgb(0, 255, 0)' : 'rgb(255, 0, 0)';
-
-  //     if(this.inactive) color = 'rgb(0, 0, 255)';
-
-  //     context.lineWidth = 1;
-  //     context.strokeStyle = "rgba(255, 255, 255, 0.5)";
-  //     context.fillStyle = color;
-  //     context.beginPath();
-  //     context.arc(centerOfMass.x, centerOfMass.y, 3, 0, 2 * Math.PI);
-  //     context.closePath();
-  //     context.fill();
-  //     context.stroke();
-  //   }
-
-  //   // draw velocity vector
-  //   if(debug.velocityVector || this.debug.velocityVector){
-  //     const velocityVector = this.velocity.copy;
-
-  //     velocityVector.magnitude *= 2;
-
-  //     context.strokeStyle = 'rgb(150, 150, 255)';
-  //     context.lineWidth = 1;
-  //     context.beginPath();
-  //     context.moveTo(centerOfMass.x, centerOfMass.y);
-  //     context.lineTo(centerOfMass.x + velocityVector.x, centerOfMass.y + velocityVector.y);
-  //     context.closePath();
-  //     context.stroke();
-  //   }
-
-  //   if(debug.vertices || this.debug.vertices){
-  //     let first = true;
-  //     for(let vertex of vertices){
-  //       context.fillStyle = lineColor;
-  //       let radius = 2;
-  //       if(first){
-  //         context.fillStyle = 'rgb(0, 0, 255)';
-  //         first = false;
-  //         radius = 2.5;
-  //       }
-  //       context.beginPath();
-  //       context.arc(vertex.x, vertex.y, radius, 0, 2 * Math.PI);
-  //       context.closePath();
-  //       context.fill();
-  //     }
-  //   }
-
-  //   if(debug.position || debug.velocity || this.debug.position || this.debug.velocity){
-  //     const offset = 50;
-  //     const textX = centerOfMass.x - offset;
-  //     const textY = centerOfMass.y - offset;
-  //     const textBackgroundColor = '#666';
-
-  //     if(debug.position || this.debug.position){
-  //       context.font = "10px Arial";
-
-  //       const positionText = `${this.position.copy.toFixed(0).toString("Position")}`;
-  //       const textWidth = context.measureText(positionText).width;
-
-  //       context.textAlign = "right";
-
-  //       // Draw black background behind the text
-  //       context.fillStyle = textBackgroundColor;
-  //       context.fillRect(textX - textWidth - 3, textY - 12, textWidth + 6, 18);
-
-  //       // Draw text on top of the black background
-  //       context.fillStyle = '#fff';
-  //       context.fillText(positionText, textX, textY);
-  //     }
-
-  //     if (debug.velocity || this.debug.velocity) {
-  //       context.font = "10px Arial";
-        
-  //       const velocityText = `${this.velocity.copy.toFixed(2, true).toString("Velocity")}`;
-  //       const metrics = context.measureText(velocityText);
-        
-  //       context.textAlign = "right";
-
-  //       // Draw black background behind the text
-  //       context.fillStyle = textBackgroundColor;
-  //       context.fillRect(textX - metrics.width - 3, textY + 10, metrics.width + 6, 18);
-
-  //       // Draw text on top of the black background
-  //       context.fillStyle = 'rgb(255, 255, 255)';
-  //       context.fillText(velocityText, textX, textY + 23);
-  //     }
-
-  //     const underlineY = textY + 8;
-
-  //     context.beginPath();
-  //     context.moveTo(textX - 90, underlineY);
-  //     context.lineTo(textX + 5, underlineY);
-  //     context.strokeStyle = '#999';
-  //     context.stroke();
-
-  //     context.beginPath();
-  //     context.moveTo(textX + 5, underlineY);
-  //     context.lineTo(centerOfMass.x, centerOfMass.y);
-  //     // context.strokeStyle = 'rgb(255, 255, 255)';
-  //     context.stroke();
-  //   }
-
-  //   if(debug.name || this.debug.name){
-  //     context.fillStyle = debug.nameColor || this.debug.nameColor;
-  //     context.font = "10px Arial";
-
-  //     context.textAlign = "center";
-  //     context.fillText(this.name, centerOfMass.x, centerOfMass.y+5);
-  //   }
-
-  //   context.restore();
-  // }
 }
