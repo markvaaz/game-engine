@@ -209,9 +209,6 @@ export default class Runner{
       // Call the after update callbacks
       for(const callback of this.#afterUpdateCallbacks.values()) callback(this.Time);
 
-      // Increment the frame count
-      this.Time.frameCount++;
-
       // Calculate the average FPS
       this.#totalFPS += this.Time.frameRate;
       this.#numFrames++;

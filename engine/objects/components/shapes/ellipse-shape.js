@@ -9,8 +9,6 @@ export default class EllipseShape extends Shape{
     this.createShape();
 
     this.GameObject.Render.shape.type = 'ellipse';
-    this.GameObject.Render.shape.vertices = [];
-
     this.GameObject.size.onChange(() => this.createShape());
   }
 

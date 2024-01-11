@@ -127,6 +127,8 @@ export default class Shape{
 
     // Update the vertices
     this.updateVertices();
+
+    this.GameObject.Render.shape.center = this.getCenterOfMass().toObject();
   }
 
   /**
@@ -226,7 +228,7 @@ export default class Shape{
    * Calculates the center of mass of the object.
    * @returns {Vector} The center of mass as a Vector.
    */
-  getCenterOfMass = () => {
+  getCenterOfMass = (dontAddPosition = false) => {
     // If the object has not been added, return early.
     if (!this.#added) return;
 
@@ -244,6 +246,8 @@ export default class Shape{
 
     // Calculate the center of mass as the average of the x and y coordinates.
     this.#centerOfMass = new Vector(x / this.vertices.length, y / this.vertices.length);
+
+    if(dontAddPosition) return this.#centerOfMass;
 
     // Adjust the center of mass by the position of the GameObject.
     return this.#centerOfMass.copy.add(this.GameObject.position);

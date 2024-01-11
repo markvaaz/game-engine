@@ -14,6 +14,8 @@ export default class Renderer {
    */
   worker = new Worker(new URL('./workers/renderer-worker.js', import.meta.url), { type: "module" });
 
+  #antiAliasing = false;
+
   /**
    * Constructs a new Renderer instance.
    * Initializes the canvas, attaches event listeners, and sets up the web worker.
@@ -37,6 +39,15 @@ export default class Renderer {
 
     // Add window resize event listener
     window.addEventListener('resize', () => this.resize());
+  }
+
+  get antiAliasing() {
+    return this.#antiAliasing;
+  }
+
+  set antiAliasing(value) {
+    this.#antiAliasing = value;
+    this.worker.postMessage({ action: "antiAliasing", value });
   }
 
   /**
@@ -68,12 +79,14 @@ export default class Renderer {
    * @param {Camera} camera - The camera configuration for rendering.
    * @param {Light} globalLight - The global light configuration for rendering.
    */
-  setup(camera, globalLight) {
+  setup(camera, globalLight,) {
     this.worker.postMessage({ 
       action: "setup", 
       canvas: this.offscreenCanvas, 
       camera: camera.toObject(), 
-      globalLight: { color: globalLight.color, brightness: globalLight.brightness } 
+      globalLight: { color: globalLight.color, brightness: globalLight.brightness },
+      antiAliasing: this.#antiAliasing
+
     }, [this.offscreenCanvas]);
   }
 

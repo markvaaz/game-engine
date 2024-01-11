@@ -34,7 +34,9 @@ export default class Render{
     bounds: {
       min: { x: 0, y: 0 },
       max: { x: 0, y: 0 }
-    }
+    },
+
+    center: { x: 0, y: 0 }
   };
 
   // Specifies the transform of the rendered object
@@ -47,17 +49,27 @@ export default class Render{
 
   // Specifies the sprite of the rendered object
   sprite = {
-    // Specifies the source of the sprite image (default is null)
     src: null,
-    // Specifies the x-coordinate of the sprite image (default is 0)
-    x: 0,
-    // Specifies the y-coordinate of the sprite image (default is 0)
-    y: 0,
-    // Specifies the width of the sprite image (default is 64)
-    width: 64,
-    // Specifies the height of the sprite image (default is 64)
-    height: 64
+    anchor: {
+      x: 0,
+      y: 0
+    },
+    size: {
+      x: 0,
+      y: 0
+    },
+    slice:{
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0
+    },
+    scale: { x:1, y:1 },
+    debug: false,
+    direction: 1
   };
+
+  castShadow = false;
 
   /**
    * Constructor for the GameObject class.
@@ -132,12 +144,19 @@ export default class Render{
    * @param {number} coords.width - The width of the sprite.
    * @param {number} coords.height - The height of the sprite.
    */
-  addSprite(src, coords){
+  setSprite(sprite){
+    const { src, anchor, size, slice, scale, debug, facing } = sprite;
+
     this.sprite.src = src;
-    this.sprite.x = coords.x;
-    this.sprite.y = coords.y;
-    this.sprite.width = coords.width;
-    this.sprite.height = coords.height;
+    this.sprite.anchor = anchor.toObject();
+    this.sprite.size = size.toObject();
+    this.sprite.slice.x = slice.position.x;
+    this.sprite.slice.y = slice.position.y;
+    this.sprite.slice.width = slice.size.x;
+    this.sprite.slice.height = slice.size.y;
+    this.sprite.scale = scale.toObject();
+    this.sprite.direction = facing === "right" ? 1 : -1;
+    this.sprite.debug = debug;
   }
 
   /**

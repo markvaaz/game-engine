@@ -94,9 +94,9 @@ export default class Scene{
 
     if(updateMode === "all" || updateMode === "world"){
       this.Physics.add(gameObject);
-      this.GameObjects.set(id, gameObject);
-      gameObject.Scene = this;
     }
+    
+    this.GameObjects.set(id, gameObject);
     
     if(updateMode === "all" || updateMode === "render") this.Renderer.add(gameObject);
 
@@ -158,7 +158,7 @@ export default class Scene{
    * @param {Object} gameObject - The game object to update the render information for.
    */
   updateRenderInformation(gameObject){
-    if(gameObject.active && gameObject.updateMode !== "world") this.queueToRender.set(gameObject.id, gameObject.Render);
+    if(gameObject.active) this.queueToRender.set(gameObject.id, gameObject.Render);
     else this.queueToRender.delete(gameObject.id);
   }
 
@@ -178,9 +178,20 @@ export default class Scene{
     this.Camera.update?.(Time);
   
     // Iterate through all game objects
-    for (const gameObject of this.GameObjects.values()){
+    for(const gameObject of this.GameObjects.values()){
       if(gameObject.destroyed) continue;
   
+      if(gameObject.updateMode === "render"){
+        if(gameObject.active){
+          this.queueToRender.set(gameObject.id, gameObject.Render);
+          gameObject.active = false;
+        }else{
+          this.queueToRender.delete(gameObject.id);
+        }
+ 
+        continue;
+      }
+
       // Update the visibility of the game object
       this.updateVisibility(gameObject);
   

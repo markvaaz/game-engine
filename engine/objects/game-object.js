@@ -40,7 +40,7 @@ export default class GameObject {
    #layer = 0;
    
    // Private field to store the ID of the game object
-   #id = null;
+   #id = "";
   
   constructor(){
     this.add(new Transform(this));
@@ -53,7 +53,7 @@ export default class GameObject {
    * @return {string} The id generated for the object.
    */
   get id(){
-    if(this.#id === null) for(let i = 0; i < 10; i++) this.#id += "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?,.;:[]{}|~".charAt(Math.floor(Math.random() * "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?,.;:[]{}|~".length));
+    if(this.#id === "") for(let i = 0; i < 10; i++) this.#id += "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?,.;:[]{}|~".charAt(Math.floor(Math.random() * "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+<>?,.;:[]{}|~".length));
     return this.#id;
   }
 

@@ -56,7 +56,8 @@ export default class Transform{
    */
   set active(value){
     this.#active = value;
-    this.framesWithoutMovement = 0;
+    if(value) this.framesWithoutMovement = 0;
+    else this.framesWithoutMovement = Infinity;
   }
 
   /**

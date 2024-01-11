@@ -1,14 +1,16 @@
 import Vector from "../engine/engine-components/vector.js";
 import Ellipse from "../engine/objects/ellipse.js";
+import Rectangle from "../engine/objects/rectangle.js";
 
-export default class Ball extends Ellipse{
+export default class Ball extends Rectangle{
   name = "Test";
   constructor(x, y){
     super(64, 64, 4);
     this.position.set(x, y);
-    this.size.set(64);
+    this.size.set(64, 82);
     this.speed = 3;
     this.direction = new Vector(3, 3);
+    this.Render.castShadow = true;
   }
 
   randomMovement(){
@@ -33,7 +35,7 @@ export default class Ball extends Ellipse{
       this.Rigidbody.set(movement.x, movement.y);
     }
 
-    this.randomMovement();
+    // this.randomMovement();
   }
   
 }

@@ -4,6 +4,9 @@ import CapsuleShape from "../engine/objects/components/shapes/capsule-shape.js";
 import Collider from "../engine/objects/components/collider.js";
 import Vector from "../engine/engine-components/vector.js";
 import LightSource from "../engine/objects/components/light-source.js";
+import AnimatedSprite from "../engine/objects/components/animated-sprite.js";
+import Sprite from "../engine/objects/components/sprite.js";
+
 
 export default class Player extends GameObject{
   name = "Player";
@@ -15,15 +18,31 @@ export default class Player extends GameObject{
     this.add(new Collider(this));
     this.position.set(x, y);
     this.size.set(64, 100);
-    this.add(new LightSource(this, 150));
+    this.layer = 1
+    this.add(new LightSource(this, 250));
     this.LightSource.type = "cone";
-    this.LightSource.angle = 0;
+    // this.LightSource.angle = -Math.PI / 6.85;
     this.LightSource.distance = 400;
-    this.LightSource.enabled = false;
+    this.LightSource.enabled = true;
     this.LightSource.add([
       { start: 0, color: "rgba(255, 255, 255, 0.8)" },
       { start: 1, color: "transparent" },
     ]);
+
+    // this.add(new AnimatedSprite(this, {
+    //   srcs: ["/game-assets/swordman/swordman.png"],
+    //   position: new Vector(0, 0),
+    //   size: new Vector(64, 64),
+    //   frameRate: 8,
+    //   type: "sheet",
+    //   scale: new Vector(3),
+    //   anchor: new Vector(0.05, -0.05),
+    //   debug: true
+    // }));
+
+    // this.Render.mode = "sprite";
+
+    // this.Render.castShadow = true;
 
     let holding = false;
 
@@ -58,7 +77,7 @@ export default class Player extends GameObject{
     this.move(Time);
     const maxDistance = 400;
 
-    this.LightSource.angle = this.position.angleBetween(Events.mouse.position);
-    this.LightSource.distance = Math.min(maxDistance, this.position.distance(Events.mouse.position));
+    // this.LightSource.angle = this.position.angleBetween(Events.mouse.position);
+    // this.LightSource.distance = Math.min(maxDistance, this.position.distance(Events.mouse.position));
   }
 }
