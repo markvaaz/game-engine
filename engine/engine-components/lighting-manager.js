@@ -151,58 +151,35 @@ export default class LightingManager{
    * @param {Object} light
    * @method getVerticesFromExtremes
    */
-  getVerticesFromExtremes(shape, light){
+  getVerticesFromExtremes(shape, light) {
     const { center, vertices } = shape;
-    const { position } = light;
+    const shapePosition = new Vector(center);
+    const lightPosition = new Vector(light.position);
+    const angleBetween = shapePosition.angleBetween(lightPosition);
 
-    // Construct a vector pointing from the light to the object.
-    const axis = new Vector(center.x - position.x, center.y - position.y); 
-
-    // Compute offsets to center the light in this axis-oriented coordinates system.
-    const onShift = position.x * axis.x + position.y * axis.y;
-    const offShift = position.x * axis.y - position.y * axis.x;
-
-    let minSlope = Infinity;
-    let maxSlope = -Infinity;
- 
+    let minY = Number.POSITIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
     let minIndex = 0;
     let maxIndex = 0;
 
     vertices.forEach((vertex, index) => {
-      // Put this vertex into a light-centered coordinate system.
-      // First, measuring its (scaled) distance in front of the light:
-      const onAxis = vertex.x * axis.x + vertex.y * axis.y - onShift;
+      vertex = new Vector(vertex.x, vertex.y);
+      vertex.rotate(-angleBetween);
 
-      // Skip vertices behind / in the plane of the light.
-      if (onAxis <= 0) return;
-
-      // Then measuring its (scaled) offset above or below the line through
-      // the center of this object.
-      const offAxis = vertex.x * axis.y - vertex.y * axis.x - offShift;
-
-      // Compute the slope of the line from the light to the vertex.
-      const slope = offAxis / onAxis;
-      
-      if (slope < minSlope) {
-          minSlope = slope;
-          minIndex = index;
+      if (vertex.y < minY) {
+        minY = vertex.y;
+        minIndex = index;
       }
-
-      if (slope > maxSlope) {
-          maxSlope = slope;
-          maxIndex = index;
+      if (vertex.y > maxY) {
+        maxY = vertex.y;
+        maxIndex = index;
       }
     });
-
-    if(minIndex > maxIndex) return {
-      min: maxIndex,
-      max: minIndex
-    }
 
     return {
       min: minIndex,
       max: maxIndex
-    }
+    };
   }
   
   renderGlobalLightOverlay(light){

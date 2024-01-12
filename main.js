@@ -94,7 +94,6 @@ Events.on("keydown", e => {
     // else scene.globalLight.brightness = 1;
     // onoff = !onoff;
 
-    console.log(JSON.stringify(player.Render.lightSource, null, 2))
     // console.log(rect, player)
   }
 })

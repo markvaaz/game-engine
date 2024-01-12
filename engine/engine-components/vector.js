@@ -365,6 +365,18 @@ export default class Vector{
   }
 
   /**
+   * @method projectOnto
+   * @description Projects the vector onto the given vector.
+   * @param {Vector} vector - The vector to project onto.
+   * @returns {Vector} The projected vector.
+   */
+  projectOnto(vector){
+    const unitV = vector.normalized;
+    const projectionLength = this.dot(unitV);
+    return unitV.multiply(projectionLength);
+  }
+
+  /**
    * @method rotate
    * @description Rotates the vector by the given angle.
    * @param {number} angle - The angle to rotate the vector by.

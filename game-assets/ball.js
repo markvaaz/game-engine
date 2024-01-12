@@ -11,6 +11,7 @@ export default class Ball extends Rectangle{
     this.speed = 3;
     this.direction = new Vector(3, 3);
     this.Render.castShadow = true;
+    this.RigidBody.static = true;
   }
 
   randomMovement(){
