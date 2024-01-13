@@ -6,6 +6,7 @@ import Vector from "../engine/engine-components/vector.js";
 import LightSource from "../engine/objects/components/light-source.js";
 import AnimatedSprite from "../engine/objects/components/animated-sprite.js";
 import Sprite from "../engine/objects/components/sprite.js";
+import EllipseShape from "../engine/objects/components/shapes/ellipse-shape.js";
 
 
 export default class Player extends GameObject{
@@ -14,13 +15,13 @@ export default class Player extends GameObject{
 
   constructor(x, y){
     super();
-    this.add(new CapsuleShape(this));
+    this.add(new EllipseShape(this));
     this.add(new Collider(this));
     this.position.set(x, y);
-    this.size.set(64, 100);
+    this.size.set(100);
     this.layer = 1
-    this.add(new LightSource(this, 1000));
-    this.LightSource.type = "cone";
+    this.add(new LightSource(this, 2000));
+    this.LightSource.type = "spot";
     // this.LightSource.angle = -Math.PI / 6.85;
     this.LightSource.distance = 400;
     this.LightSource.enabled = true;
@@ -28,6 +29,8 @@ export default class Player extends GameObject{
       { start: 0, color: "rgba(255, 255, 255, 0.8)" },
       { start: 1, color: "transparent" },
     ]);
+
+    this.RigidBody.mass = 50000
 
     // this.add(new AnimatedSprite(this, {
     //   srcs: ["/game-assets/swordman/swordman.png"],
@@ -57,7 +60,7 @@ export default class Player extends GameObject{
   }
 
   move(Time){
-    const speed = 300;
+    const speed = 600;
     let forceX = 0;
     let forceY = 0;
 
@@ -75,9 +78,9 @@ export default class Player extends GameObject{
 
   update(Time){
     this.move(Time);
-    const maxDistance = 400;
+    const maxDistance = 10000;
 
-    // this.LightSource.angle = this.position.angleBetween(Events.mouse.position);
-    // this.LightSource.distance = Math.min(maxDistance, this.position.distance(Events.mouse.position));
+    this.LightSource.angle = this.position.angleBetween(Events.mouse.position);
+    this.LightSource.distance = Math.min(maxDistance, this.position.distance(Events.mouse.position));
   }
 }

@@ -20,8 +20,11 @@ export default class LightingManager{
     return this.Renderer.context;
   }
 
-  getScaledPosition(position){
-    return new Vector((position.x - this.camera.position.x) * this.camera.scale.x, (position.y - this.camera.position.y) * this.camera.scale.y);
+  getScaledPosition(x, y) {
+    if(typeof x === 'object' && !isNaN(x.x) && !isNaN(x.y))
+      return this.getScaledPosition(x.x, x.y);
+
+    return new Vector((x - this.camera.position.x) * this.camera.scale.x, (y - this.camera.position.y) * this.camera.scale.y);
   }
 
   renderLights() {
@@ -63,6 +66,8 @@ export default class LightingManager{
 
     rendererContext.globalAlpha = brightness;
 
+    rendererContext.imageSmoothingEnabled = true;
+
     rendererContext.drawImage(
       this.canvas,
       0,
@@ -76,6 +81,8 @@ export default class LightingManager{
     );
 
     rendererContext.globalAlpha = 1;
+
+    rendererContext.imageSmoothingEnabled = this.Renderer.antiAliasing;
   }
 
   renderLight(light) {
@@ -97,52 +104,96 @@ export default class LightingManager{
     }
   }
 
-  renderShadow(light, shape, shapePosition){
+  renderShadow(light, shape, shapePosition, gco = "destination-out") {
     const { context } = this;
-    shape = {
-      ...shape,
-      center: shapePosition
-    }
-    const vertices = this.getVerticesFromExtremes(shape, light);
-    const vertexA = this.getScaledPosition({ x:shape.vertices[vertices.min].x + shapePosition.x, y:shape.vertices[vertices.min].y + shapePosition.y });
-    const vertexB = this.getScaledPosition({ x:shape.vertices[vertices.max].x + shapePosition.x, y:shape.vertices[vertices.max].y + shapePosition.y });
-  
-    const angleBetweenVertexAAndLight = new Vector(light.position).angleBetween(vertexA);
-    const angleBetweenVertexBAndLight = new Vector(light.position).angleBetween(vertexB);
 
-    const length = light.distance + light.radius; // the length of the trepazoid
-    const vertexC = this.getScaledPosition({ x:vertexA.x + Math.cos(-angleBetweenVertexAAndLight) * length, y:vertexA.y + Math.sin(angleBetweenVertexAAndLight) * length });
-    const vertexD = this.getScaledPosition({ x:vertexB.x + Math.cos(-angleBetweenVertexBAndLight) * length, y:vertexB.y + Math.sin(angleBetweenVertexBAndLight) * length });
-  
-    context.globalCompositeOperation = "destination-out";
+    context.save();
+
+    this.renderShadowShape(shape, light, shapePosition, gco);
+
+    context.beginPath();
+    for (let i = 0; i < shape.vertices.length; i++) {
+      const vertex = this.getScaledPosition({ x:shape.vertices[i].x + shapePosition.x, y:shape.vertices[i].y + shapePosition.y });
+
+      if(i === 0){
+        context.moveTo(vertex.x, vertex.y);
+        continue;
+      }
+        
+      context.lineTo(vertex.x, vertex.y);
+    }
+    context.closePath();
+    context.fill();
+    context.restore();
+  }
+
+  renderShadowShape(shape, light, shapePosition, gco = "destination-out") {
+    const { context } = this;
+    const shadowShape = this.getShadowShape(shape, light, shapePosition);
+
+    context.globalCompositeOperation = gco;
     context.globalAlpha = 1;
     context.fillStyle = "black";
-  
-    if(shapePosition.x !== light.position.x && shapePosition.y !== light.position.y){
-      context.beginPath();
-      context.moveTo(vertexA.x, vertexA.y);
-      context.lineTo(vertexB.x, vertexB.y);
-      context.lineTo(vertexD.x, vertexD.y);
-      context.lineTo(vertexC.x, vertexC.y);
-      context.lineTo(vertexA.x, vertexA.y);
-      context.closePath();
-      context.fill();
+    context.beginPath();
+
+    if (shapePosition.x !== light.position.x && shapePosition.y !== light.position.y) {
+      for (let i = 0; i < shadowShape.length; i++) {
+        const vertex = shadowShape[i];
+
+        if (i === 0) {
+          context.moveTo(vertex.x, vertex.y);
+          continue;
+        }
+
+        context.lineTo(vertex.x, vertex.y);
+      }
     }
+    context.closePath();
+    context.fill();
+  }
 
-    // context.beginPath();
-    // for (let i = 0; i < shape.vertices.length; i++) {
-    //   const vertex = this.getScaledPosition({ x:shape.vertices[i].x + shapePosition.x, y:shape.vertices[i].y + shapePosition.y });
+  getShadowShape(shape, light, shapePosition) {
+    const { min, max } = this.getVerticesFromExtremes(shape, light, shapePosition); // Obtém os índices das vértices min e max
+    const vertices = [];
+    const lightPosition = this.getScaledPosition(light.position);
 
-    //   if(i === 0){
-    //     context.moveTo(vertex.x, vertex.y);
-    //     continue;
-    //   }
-        
-    //   context.lineTo(vertex.x, vertex.y);
-    // }
-    // context.closePath();
-    // context.fill();
-    // context.stroke();
+    // shapePosition = shapePosition;
+  
+    // Obtém as posições escalonadas para as vértices A e B
+    const vertexA = this.getScaledPosition({
+      x: shape.vertices[min].x + shapePosition.x,
+      y: shape.vertices[min].y + shapePosition.y
+    });
+    const vertexB = this.getScaledPosition({
+      x: shape.vertices[max].x + shapePosition.x,
+      y: shape.vertices[max].y + shapePosition.y
+    });
+  
+    // Calcula os vetores direção entre as vértices e a luz
+    const directionVectorA = new Vector(vertexA.x - lightPosition.x, vertexA.y - lightPosition.y);
+    const directionVectorB = new Vector(vertexB.x - lightPosition.x, vertexB.y - lightPosition.y);
+  
+    // Define o comprimento máximo do trapézio (pode ser ajustado conforme necessário)
+    const maxLength = 10000; // Ajuste conforme necessário
+  
+    // Normaliza os vetores direção
+    const normalizedDirectionA = directionVectorA.normalized;
+    const normalizedDirectionB = directionVectorB.normalized;
+  
+    // Calcula as vértices C e D baseadas nas direções normalizadas e no comprimento máximo
+    const vertexC = this.getScaledPosition({
+      x: lightPosition.x + normalizedDirectionA.x * maxLength,
+      y: lightPosition.y + normalizedDirectionA.y * maxLength
+    });
+  
+    const vertexD = this.getScaledPosition({
+      x: lightPosition.x + normalizedDirectionB.x * maxLength,
+      y: lightPosition.y + normalizedDirectionB.y * maxLength
+    });
+  
+    vertices.push(vertexA, vertexB, vertexD, vertexC);
+  
+    return vertices;
   }
 
   /**
@@ -151,35 +202,56 @@ export default class LightingManager{
    * @param {Object} light
    * @method getVerticesFromExtremes
    */
-  getVerticesFromExtremes(shape, light) {
-    const { center, vertices } = shape;
-    const shapePosition = new Vector(center);
-    const lightPosition = new Vector(light.position);
-    const angleBetween = shapePosition.angleBetween(lightPosition);
+  getVerticesFromExtremes(shape, light, shapePosition) {
+    const { vertices } = shape;
+    const center = shapePosition;
+    const position = light.position;
 
-    let minY = Number.POSITIVE_INFINITY;
-    let maxY = Number.NEGATIVE_INFINITY;
+    // Construct a vector pointing from the light to the object.
+    const axis = new Vector(center.x - position.x, center.y - position.y); 
+
+    // Compute offsets to center the light in this axis-oriented coordinates system.
+    const onShift = position.x * axis.x + position.y * axis.y;
+    const offShift = position.x * axis.y - position.y * axis.x;
+
+    let minSlope = Infinity;
+    let maxSlope = -Infinity;
+ 
     let minIndex = 0;
     let maxIndex = 0;
 
-    vertices.forEach((vertex, index) => {
-      vertex = new Vector(vertex.x, vertex.y);
-      vertex.rotate(-angleBetween);
+    for(let index = 0; index < vertices.length; index++){
+      const vertex = {
+        x: vertices[index].x + center.x,
+        y: vertices[index].y + center.y
+      };
 
-      if (vertex.y < minY) {
-        minY = vertex.y;
+      // Put this vertex into a light-centered coordinate system.
+      // First, measuring its (scaled) distance in front of the light:
+      const onAxis = vertex.x * axis.x + vertex.y * axis.y - onShift;
+
+      // Skip vertices behind / in the plane of the light.
+      if (onAxis <= 0) continue;
+
+      // Then measuring its (scaled) offset above or below the line through
+      // the center of this object.
+      const offAxis = vertex.x * axis.y - vertex.y * axis.x - offShift;
+
+      // Compute the slope of the line from the light to the vertex.
+      const slope = offAxis / onAxis;
+      
+      if (slope < minSlope){
+        minSlope = slope;
         minIndex = index;
       }
-      if (vertex.y > maxY) {
-        maxY = vertex.y;
+
+      if (slope > maxSlope) {
+        maxSlope = slope;
         maxIndex = index;
       }
-    });
+    }
 
-    return {
-      min: minIndex,
-      max: maxIndex
-    };
+    return { min: minIndex, max: maxIndex }
   }
   
   renderGlobalLightOverlay(light){
@@ -201,6 +273,29 @@ export default class LightingManager{
     context.globalCompositeOperation = "destination-out";
     context.fillStyle = gradient;
     context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    this.shadows.forEach(gameObject => {
+      this.renderShadow(light, gameObject.shape, gameObject.transform.position, "source-over")
+
+      context.globalCompositeOperation = "destination-out";
+      context.fillStyle = "fff";
+
+      context.beginPath();
+      gameObject.shape.vertices.forEach((vertex, index) => {
+        vertex = this.getScaledPosition({
+          x: vertex.x + gameObject.transform.position.x,
+          y: vertex.y + gameObject.transform.position.y
+        });
+        if(index === 0){
+          context.moveTo(vertex.x, vertex.y);
+        }else{
+          context.lineTo(vertex.x, vertex.y);
+        }
+      });
+
+      context.closePath();
+      context.fill();
+    });
   }
 
   getGradient({ context, light, position, radius, distance, scaledRadius = radius }){

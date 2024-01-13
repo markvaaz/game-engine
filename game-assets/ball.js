@@ -1,4 +1,5 @@
 import Vector from "../engine/engine-components/vector.js";
+import Capsule from "../engine/objects/capsule.js";
 import Ellipse from "../engine/objects/ellipse.js";
 import Rectangle from "../engine/objects/rectangle.js";
 
@@ -7,7 +8,7 @@ export default class Ball extends Rectangle{
   constructor(x, y){
     super(64, 64, 4);
     this.position.set(x, y);
-    this.size.set(64, 82);
+    this.size.set(500, 150);
     this.speed = 3;
     this.direction = new Vector(3, 3);
     this.Render.castShadow = true;

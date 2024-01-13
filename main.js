@@ -11,7 +11,7 @@ const scene = engine.SceneManager.createScene('main');
 
 SceneManager.changeScene('main');
 
-const player = new Player(innerWidth / 2 - 150, innerHeight / 2 - 0.1);
+const player = new Player(innerWidth / 2 - 0.1, innerHeight / 2 - 200);
 const map = new GameObject();
 
 scene.Camera.follow(player);
@@ -37,7 +37,7 @@ const spawnArea = 100;
 // }
 
 const tileSize = scene.Physics.SpatialHash.cellSize;
-const size = 300;
+const size = 800;
 const startX = -size * 2;
 const startY = -size * 2;
 const endX = innerWidth + size * 2;
@@ -72,8 +72,8 @@ Runner.onUpdate(() => {
   document.getElementById('fps').innerText = `FPS: ${Runner.frameRate.toFixed(0)}`;
   document.getElementById('added-objects').innerText = `Objects in scene: ${scene.addedObjects}`;
 
-  player.LightSource.angle = player.position.angleBetween(newBall.position);
-  player.LightSource.distance = player.position.distance(newBall.position);
+  // player.LightSource.angle = player.position.angleBetween(newBall.position);
+  // player.LightSource.distance = player.position.distance(newBall.position);
 });
 
 engine.setStyle();
@@ -90,9 +90,9 @@ Events.on("keydown", e => {
   }
 
   if(e.key == ' '){
-    // if(onoff) scene.globalLight.brightness = 0;
-    // else scene.globalLight.brightness = 1;
-    // onoff = !onoff;
+    if(onoff) scene.globalLight.brightness = 0;
+    else scene.globalLight.brightness = 1;
+    onoff = !onoff;
 
     // console.log(rect, player)
   }
