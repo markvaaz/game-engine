@@ -20,8 +20,8 @@ export default class Player extends GameObject{
     this.position.set(x, y);
     this.size.set(100);
     this.layer = 1
-    this.add(new LightSource(this, 2000));
-    this.LightSource.type = "spot";
+    this.add(new LightSource(this, 400));
+    this.LightSource.type = "cone";
     // this.LightSource.angle = -Math.PI / 6.85;
     this.LightSource.distance = 400;
     this.LightSource.enabled = true;
@@ -45,7 +45,7 @@ export default class Player extends GameObject{
 
     // this.Render.mode = "sprite";
 
-    // this.Render.castShadow = true;
+    this.Render.shape.shadow.enabled = true;
 
     let holding = false;
 

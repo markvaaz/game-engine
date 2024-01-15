@@ -134,6 +134,14 @@ export default class LightingManager{
     context.globalCompositeOperation = gco;
     context.globalAlpha = 1;
     context.fillStyle = "black";
+
+    if(shape.shadow.blur > 0){
+      context.shadowColor = shape.shadow.color;
+      context.shadowBlur = shape.shadow.blur;
+      context.shadowOffsetX = 0.1;
+      context.shadowOffsetY = 0.1;
+    }
+    
     context.beginPath();
 
     if (shapePosition.x !== light.position.x && shapePosition.y !== light.position.y) {
@@ -150,16 +158,18 @@ export default class LightingManager{
     }
     context.closePath();
     context.fill();
+
+    context.shadowColor = "transparent";
+    context.shadowBlur = 0;
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 0;
   }
 
   getShadowShape(shape, light, shapePosition) {
-    const { min, max } = this.getVerticesFromExtremes(shape, light, shapePosition); // Obtém os índices das vértices min e max
+    const { min, max } = this.getVerticesFromExtremes(shape, light, shapePosition);
     const vertices = [];
     const lightPosition = this.getScaledPosition(light.position);
 
-    // shapePosition = shapePosition;
-  
-    // Obtém as posições escalonadas para as vértices A e B
     const vertexA = this.getScaledPosition({
       x: shape.vertices[min].x + shapePosition.x,
       y: shape.vertices[min].y + shapePosition.y
@@ -169,26 +179,20 @@ export default class LightingManager{
       y: shape.vertices[max].y + shapePosition.y
     });
   
-    // Calcula os vetores direção entre as vértices e a luz
     const directionVectorA = new Vector(vertexA.x - lightPosition.x, vertexA.y - lightPosition.y);
     const directionVectorB = new Vector(vertexB.x - lightPosition.x, vertexB.y - lightPosition.y);
-  
-    // Define o comprimento máximo do trapézio (pode ser ajustado conforme necessário)
-    const maxLength = 10000; // Ajuste conforme necessário
-  
-    // Normaliza os vetores direção
+    const maxLength = 1000000;
     const normalizedDirectionA = directionVectorA.normalized;
     const normalizedDirectionB = directionVectorB.normalized;
   
-    // Calcula as vértices C e D baseadas nas direções normalizadas e no comprimento máximo
     const vertexC = this.getScaledPosition({
-      x: lightPosition.x + normalizedDirectionA.x * maxLength,
-      y: lightPosition.y + normalizedDirectionA.y * maxLength
+      x: shapePosition.x + normalizedDirectionA.x * maxLength,
+      y: shapePosition.y + normalizedDirectionA.y * maxLength
     });
   
     const vertexD = this.getScaledPosition({
-      x: lightPosition.x + normalizedDirectionB.x * maxLength,
-      y: lightPosition.y + normalizedDirectionB.y * maxLength
+      x: shapePosition.x + normalizedDirectionB.x * maxLength,
+      y: shapePosition.y + normalizedDirectionB.y * maxLength
     });
   
     vertices.push(vertexA, vertexB, vertexD, vertexC);
@@ -197,60 +201,68 @@ export default class LightingManager{
   }
 
   /**
-   * Gets the extremes of the shape in relation to the plane of the angle between the light and the shape
-   * @param {Object} shape
-   * @param {Object} light
-   * @method getVerticesFromExtremes
+   * This method calculates the vertices of a shape that are at the extremes of the light source.
+   * It returns the indices of the vertices that have the minimum and maximum angles with respect to the light source.
+   *
+   * @param {Object} shape - The shape object which contains the vertices.
+   * @param {Object} light - The light object which contains the position of the light source.
+   * @param {Object} shapePosition - The position of the shape.
+   * @returns {Object} - An object containing the indices of the vertices with the minimum and maximum angles. Returns false if the shape has no vertices.
    */
   getVerticesFromExtremes(shape, light, shapePosition) {
+    // If the shape has no vertices, return false
+    if(shape.vertices.length === 0) return false;
+    
+    // Destructure the vertices from the shape
     const { vertices } = shape;
+    // Define the center position of the shape and the position of the light
     const center = shapePosition;
     const position = light.position;
 
-    // Construct a vector pointing from the light to the object.
-    const axis = new Vector(center.x - position.x, center.y - position.y); 
+    // Initialize the minimum and maximum angles to extreme values
+    let minAngle = Infinity;
+    let maxAngle = -Infinity;
 
-    // Compute offsets to center the light in this axis-oriented coordinates system.
-    const onShift = position.x * axis.x + position.y * axis.y;
-    const offShift = position.x * axis.y - position.y * axis.x;
-
-    let minSlope = Infinity;
-    let maxSlope = -Infinity;
- 
-    let minIndex = 0;
-    let maxIndex = 0;
+    // Initialize the indices of the minimum and maximum angles to -1
+    let minIndex = -1;
+    let maxIndex = -1;
 
     for(let index = 0; index < vertices.length; index++){
+      // Calculate the position of the current vertex
       const vertex = {
         x: vertices[index].x + center.x,
         y: vertices[index].y + center.y
       };
 
-      // Put this vertex into a light-centered coordinate system.
-      // First, measuring its (scaled) distance in front of the light:
-      const onAxis = vertex.x * axis.x + vertex.y * axis.y - onShift;
+      // Create vectors from the light source to the vertex and the center of the shape
+      const vectorToVertex = new Vector(vertex.x - position.x, vertex.y - position.y);
+      const vectorToCenter = new Vector(center.x - position.x, center.y - position.y);
 
-      // Skip vertices behind / in the plane of the light.
-      if (onAxis <= 0) continue;
+      // Calculate the difference between the angles
+      let angle = Math.atan2(vectorToVertex.y, vectorToVertex.x) - Math.atan2(vectorToCenter.y, vectorToCenter.x);
 
-      // Then measuring its (scaled) offset above or below the line through
-      // the center of this object.
-      const offAxis = vertex.x * axis.y - vertex.y * axis.x - offShift;
+      // Normalize the angle to be within the range [-PI, PI]
+      if (angle < -Math.PI) {
+        angle += Math.PI * 2;
+      }
 
-      // Compute the slope of the line from the light to the vertex.
-      const slope = offAxis / onAxis;
-      
-      if (slope < minSlope){
-        minSlope = slope;
+      if (angle > Math.PI) {
+        angle -= Math.PI * 2;
+      }
+
+      // Update the minimum and maximum angles and their corresponding indices
+      if (angle < minAngle) {
+        minAngle = angle;
         minIndex = index;
       }
 
-      if (slope > maxSlope) {
-        maxSlope = slope;
+      if (angle > maxAngle) {
+        maxAngle = angle;
         maxIndex = index;
       }
     }
 
+    // Return the indices of the vertices with the minimum and maximum angles
     return { min: minIndex, max: maxIndex }
   }
   
@@ -275,27 +287,32 @@ export default class LightingManager{
     context.fillRect(0, 0, this.canvas.width, this.canvas.height);
     
     this.shadows.forEach(gameObject => {
-      this.renderShadow(light, gameObject.shape, gameObject.transform.position, "source-over")
-
-      context.globalCompositeOperation = "destination-out";
-      context.fillStyle = "fff";
-
-      context.beginPath();
-      gameObject.shape.vertices.forEach((vertex, index) => {
-        vertex = this.getScaledPosition({
-          x: vertex.x + gameObject.transform.position.x,
-          y: vertex.y + gameObject.transform.position.y
-        });
-        if(index === 0){
-          context.moveTo(vertex.x, vertex.y);
-        }else{
-          context.lineTo(vertex.x, vertex.y);
-        }
-      });
-
-      context.closePath();
-      context.fill();
+      if(gameObject.shape.shadow.type !== "wall") return;
+      context.fillStyle = gameObject.shape.shadow.color;
+      this.renderShadow(light, gameObject.shape, gameObject.transform.position, "source-over");
     });
+
+    context.globalCompositeOperation = "destination-out";
+    context.fillStyle = "fff";
+
+    context.beginPath();
+      
+    // this.shadows.forEach(gameObject => {
+    //   gameObject.shape.vertices.forEach((vertex, index) => {
+    //     vertex = this.getScaledPosition({
+    //       x: vertex.x + gameObject.transform.position.x,
+    //       y: vertex.y + gameObject.transform.position.y
+    //     });
+    //     if(index === 0){
+    //       context.moveTo(vertex.x, vertex.y);
+    //     }else{
+    //       context.lineTo(vertex.x, vertex.y);
+    //     }
+    //   });
+    // });
+
+    context.closePath();
+    context.fill();
   }
 
   getGradient({ context, light, position, radius, distance, scaledRadius = radius }){

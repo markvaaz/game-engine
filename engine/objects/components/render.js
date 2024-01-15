@@ -25,18 +25,27 @@ export default class Render{
     // Specifies the vertices of the shape (default is an empty array)
     vertices: [],
     // Specifies the line color of the shape (default is "rgba(255, 255, 255, 1)")
-    lineColor: "rgba(255, 255, 255, 1)",
+    lineColor: "rgba(255, 255, 255, 0)",
     // Specifies the fill color of the shape (default is a random HSL color)
-    fillColor: `hsl(${Math.random() * 360} 100% 50% / 100%)`,
+    fillColor: "white",//`hsl(${Math.random() * 360} 100% 50% / 100%)`,
     // Specifies the type of the shape (default is "shape")
     type: "shape",
+
+    lineWidth: 0,
     // Specifies the bounds of the shape (default is { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } })
     bounds: {
       min: { x: 0, y: 0 },
       max: { x: 0, y: 0 }
     },
 
-    center: { x: 0, y: 0 }
+    center: { x: 0, y: 0 },
+
+    shadow: {
+      enabled: false,
+      color: "#000000",
+      blur: 5,
+      type: "normal"
+    }
   };
 
   // Specifies the transform of the rendered object
@@ -68,8 +77,6 @@ export default class Render{
     debug: false,
     direction: 1
   };
-
-  castShadow = false;
 
   /**
    * Constructor for the GameObject class.

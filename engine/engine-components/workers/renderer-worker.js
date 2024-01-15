@@ -139,7 +139,7 @@ class RendererWorker{
       this.LightingManager.lights.delete(id);
     }
 
-    if(gameObject.castShadow){
+    if(gameObject.shape.shadow.enabled){
       this.LightingManager.shadows.set(id, gameObject);
     }else{
       this.LightingManager.shadows.delete(id);
@@ -239,6 +239,7 @@ class RendererWorker{
 
     context.fillStyle = gameObject.shape.fillColor;
     context.strokeStyle = gameObject.shape.lineColor;
+    context.lineWidth = gameObject.shape.lineWidth;
     context.globalAlpha = gameObject.opacity;
     context.globalCompositeOperation = gameObject.gco;
 

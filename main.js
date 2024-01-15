@@ -4,6 +4,7 @@ import GameObject from "./engine/objects/game-object.js";
 import Player from "./game-assets/player.js";
 import Ball from "./game-assets/ball.js";
 import Sprite from "./engine/objects/components/sprite.js";
+import Rectangle from "./engine/objects/rectangle.js";
 
 const engine = new Engine();
 const { SceneManager, Runner, Events, Vector } = engine;
@@ -22,19 +23,41 @@ map.size.set(2000);
 
 scene.add(player);
 
-const numBalls = 1;
-const spawnArea = 100;
+const numBalls = 20;
+const spawnArea = 300;
 
-// for (let i = 0; i < numBalls; i++) {
+for (let i = 0; i < numBalls; i++) {
   const randomX = Math.random() * (spawnArea * 2) - spawnArea + innerWidth / 2;
   const randomY = Math.random() * (spawnArea * 2) - spawnArea + innerHeight / 2;
 
-  const newBall = new Ball(innerWidth / 2, innerHeight / 2);
+  const newBall = new Ball(randomX, randomY);
 
   newBall.Render.mode = "shape";
 
   scene.add(newBall);
-// }
+}
+
+function createWall(x, y, width, height) {
+  const wall = new Rectangle(width, height);
+  wall.position.set(x, y);
+  wall.RigidBody.static = true;
+  wall.Render.shape.shadow.enabled = true;
+  wall.Render.shape.shadow.type = "wall";
+  // wall.Render.shape.fillColor = "#000";
+
+  scene.add(wall);
+  return wall;
+}
+
+const centerX = innerWidth / 2;
+const centerY = innerHeight / 2;
+const wallWidth = 2000;
+const wallHeight = 150;
+
+createWall(centerX - 1000, centerY, wallHeight, wallWidth);
+createWall(centerX + 1000, centerY, wallHeight, wallWidth);
+createWall(centerX, centerY - 1000, wallWidth, wallHeight);
+createWall(centerX, centerY + 1000, wallWidth, wallHeight);
 
 const tileSize = scene.Physics.SpatialHash.cellSize;
 const size = 800;
