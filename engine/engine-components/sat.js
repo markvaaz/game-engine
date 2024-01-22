@@ -26,7 +26,6 @@ export default class SAT{
 
   update(){
     this.checkCollisions();
-    this.solveCollisions();
   }
 
   updateHash(gameObject){
@@ -37,76 +36,73 @@ export default class SAT{
   }
 
   checkCollisions(){
-    for(const gameObjectA of this.GameObjects.values()){
-      this.updateHash(gameObjectA);
-      if(!gameObjectA.Collider || gameObjectA.Collider.disableCollisions || !gameObjectA.active) continue;
-      const query = this.SpatialHash.query(gameObjectA);
+    for(let i = 0; i < this.iterations; i++){
+      for(const gameObjectA of this.GameObjects.values()){
+        this.updateHash(gameObjectA);
+        if(!gameObjectA.Collider || gameObjectA.Collider.disableCollisions || !gameObjectA.active) continue;
+        const query = this.SpatialHash.query(gameObjectA);
 
-      for(const gameObjectB of query){
-        if(this.collisions.has(`${gameObjectA.id}-${gameObjectB.id}`) || this.collisions.has(`${gameObjectB.id}-${gameObjectA.id}`)) continue;
+        for(const gameObjectB of query){
+          if(this.collisions.has(`${gameObjectA.id}-${gameObjectB.id}`) || this.collisions.has(`${gameObjectB.id}-${gameObjectA.id}`)) continue;
 
-        const collisionInformation = this.getCollisionInformation(gameObjectA, gameObjectB);
+          const collisionInformation = this.getCollisionInformation(gameObjectA, gameObjectB);
 
-        if(collisionInformation.collided){
-          const collision = new Collision({ gameObjectA, gameObjectB, ...collisionInformation });
-
-          this.collisions.set(collision.id, collision);
+          if(collisionInformation.collided){
+            const collision = new Collision({ gameObjectA, gameObjectB, ...collisionInformation });
+            console.log(collision);
+            this.solveCollisions(collision);
+          }
         }
       }
     }
   }
 
-  solveCollisions(){
-    for(let i = 0; i < this.iterations; i++){
-      for(const collision of this.collisions.values()){
-        const { gameObjectA, gameObjectB } = collision;
-        const thisType = gameObjectA.type;
-        const otherType = gameObjectB.type;
-        
-        // Check if the current object has specific collision restrictions
-  
-        if(gameObjectA.Collider.ignoredCollisions.has(otherType) || gameObjectA.Collider.ignoredCollisions.has(gameObjectB)){
-          this.collisions.delete(collision.id);
-          continue;
-        }
-  
-        if(gameObjectB.Collider.ignoredCollisions.has(thisType) || gameObjectB.Collider.ignoredCollisions.has(gameObjectA)){
-          this.collisions.delete(collision.id);
-          continue;
-        }
-  
-        // If the current object can only collide with certain types of objects
-        if(gameObjectA.collidesOnlyWith.size > 0 && !(gameObjectA.collidesOnlyWith.has(otherType) || gameObjectA.collidesOnlyWith.has(gameObjectB))){
-          this.collisions.delete(collision.id);
-          continue;
-        }
-  
-        // Check if the other object has specific collision restrictions
-        if(gameObjectB.collidesOnlyWith.size > 0 && !(gameObjectB.collidesOnlyWith.has(thisType) || gameObjectB.collidesOnlyWith.has(gameObjectA))){
-          this.collisions.delete(collision.id);
-          continue;
-        }
-  
-        // Check if either object is a trigger or has trigger-only collisions
-        if(gameObjectA.Collider.trigger || gameObjectB.Collider.trigger || gameObjectA.triggerOnlyCollisions.has(otherType) || gameObjectA.triggerOnlyCollisions.has(gameObjectB) || gameObjectB.Collider.triggerOnlyCollisions.has(thisType) || gameObjectB.Collider.triggerOnlyCollisions.has(gameObjectA)){
-          this.collisions.delete(collision.id);
+  solveCollisions(collision){
+    const { gameObjectA, gameObjectB } = collision;
+    const thisType = gameObjectA.type;
+    const otherType = gameObjectB.type;
+    
+    // Check if the current object has specific collision restrictions
 
-          gameObjectA.Collider.dispatch(collision);
-          gameObjectB.Collider.dispatch(collision);
-          Events.emit("collision", collision);
-
-          continue;
-        }
-
-        gameObjectA.Collider.dispatch(collision);
-        gameObjectB.Collider.dispatch(collision);
-        Events.emit("collision", collision);
-
-        this.separate(collision);
-        // this.applyForces(collision);
-        this.collisions.delete(collision.id);
-      }
+    if(gameObjectA.Collider.ignoredCollisions.has(otherType) || gameObjectA.Collider.ignoredCollisions.has(gameObjectB)){
+      this.collisions.delete(collision.id);
+      return;
     }
+
+    if(gameObjectB.Collider.ignoredCollisions.has(thisType) || gameObjectB.Collider.ignoredCollisions.has(gameObjectA)){
+      this.collisions.delete(collision.id);
+      return;
+    }
+
+    // If the current object can only collide with certain types of objects
+    if(gameObjectA.collidesOnlyWith.size > 0 && !(gameObjectA.collidesOnlyWith.has(otherType) || gameObjectA.collidesOnlyWith.has(gameObjectB))){
+      this.collisions.delete(collision.id);
+      return;
+    }
+
+    // Check if the other object has specific collision restrictions
+    if(gameObjectB.collidesOnlyWith.size > 0 && !(gameObjectB.collidesOnlyWith.has(thisType) || gameObjectB.collidesOnlyWith.has(gameObjectA))){
+      this.collisions.delete(collision.id);
+      return;
+    }
+
+    // Check if either object is a trigger or has trigger-only collisions
+    if(gameObjectA.Collider.trigger || gameObjectB.Collider.trigger || gameObjectA.triggerOnlyCollisions.has(otherType) || gameObjectA.triggerOnlyCollisions.has(gameObjectB) || gameObjectB.Collider.triggerOnlyCollisions.has(thisType) || gameObjectB.Collider.triggerOnlyCollisions.has(gameObjectA)){
+      this.collisions.delete(collision.id);
+
+      gameObjectA.Collider.dispatch(collision);
+      gameObjectB.Collider.dispatch(collision);
+      Events.emit("collision", collision);
+
+      return;
+    }
+
+    gameObjectA.Collider.dispatch(collision);
+    gameObjectB.Collider.dispatch(collision);
+    Events.emit("collision", collision);
+
+    this.separate(collision);
+    // this.applyForces(collision);
   }
 
   separate(collision){
