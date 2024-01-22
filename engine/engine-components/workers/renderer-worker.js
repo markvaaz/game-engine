@@ -94,8 +94,8 @@ class RendererWorker{
   }
 
   updateVisibility(gameObject) {
-    const bounds = gameObject.shape.bounds;
-    const offset = 10 + (gameObject.lightSource ? gameObject.lightSource.radius + gameObject.lightSource.distance : 0);
+    const bounds = gameObject.shape.bounds || gameObject.transform.bounds;
+    const offset = 200 + (gameObject.lightSource ? (gameObject.lightSource.radius * 2 + gameObject.lightSource.distance) : 0);
     const cameraBounds = this.camera.bounds;
     const isWithinXBounds = bounds.max.x >= cameraBounds.min.x - offset && bounds.min.x <= cameraBounds.max.x + (offset * 2);
     const isWithinYBounds = bounds.max.y >= cameraBounds.min.y - offset && bounds.min.y <= cameraBounds.max.y + (offset * 2);
@@ -104,10 +104,19 @@ class RendererWorker{
     if(gameObject.lightSource != null){
       gameObject.lightSource.visible = gameObject.visible;
     }
+
+    if(gameObject.shadow != null){
+      gameObject.shadow.visible = gameObject.visible;
+    }
+
+    if(gameObject.shape.darkZone){
+      gameObject.shape.visible = gameObject.visible;
+    }
   }
 
   setLayer(gameObject) {
-    const { layer, id, lightSource } = gameObject;
+    const { layer, id, lightSource, shadow } = gameObject;
+    const darkZone = gameObject.shape?.darkZone;
     let layerAdded = false;
 
     // Add the layer if it doesn't exist
@@ -123,24 +132,33 @@ class RendererWorker{
       }
     }
 
-    const currentLayer = this.layers.get(layer);
-
-    // Update the existing game object or add a new one if it doesn't exist
-    if(currentLayer.has(id)){
-      for (const key in gameObject) {
-        currentLayer.get(id)[key] = gameObject[key];
+    if(!darkZone){
+      const currentLayer = this.layers.get(layer);
+      this.LightingManager.darkZones.delete(id);
+      
+      if(currentLayer.has(id)){
+        for (const key in gameObject) {
+          currentLayer.get(id)[key] = gameObject[key];
+        }
       }
+      else currentLayer.set(id, gameObject);  
+    }else{
+      gameObject.shape.id = id;
+      gameObject.shape.visible = gameObject.visible;
+      gameObject.shape.position = gameObject.transform.position;
+      this.LightingManager.darkZones.set(id, gameObject.shape);
     }
-    else currentLayer.set(id, gameObject);
 
     if(lightSource){
+      lightSource.id = id;
       this.LightingManager.lights.set(id, lightSource);
     }else{
       this.LightingManager.lights.delete(id);
     }
 
-    if(gameObject.shape.shadow.enabled){
-      this.LightingManager.shadows.set(id, gameObject);
+    if(shadow){
+      shadow.id = id;
+      this.LightingManager.shadows.set(id, shadow);
     }else{
       this.LightingManager.shadows.delete(id);
     }
@@ -194,6 +212,9 @@ class RendererWorker{
 
         else if(gameObject.mode === "sprite")
           await this.renderSprite(gameObject);
+
+        if(gameObject.debug.enabled)
+          this.renderDebug(gameObject);
       }
     }
 
@@ -201,7 +222,7 @@ class RendererWorker{
   }
 
   async renderSprite(gameObject) {
-    if(gameObject.sprite.src == null) return;
+    if(gameObject.sprite && gameObject.sprite.src == null) return;
 
     const { anchor, size: spriteSize, slice, scale, debug, direction } = gameObject.sprite; // the position and size of the portion that will be rendered
     const { position: gameObjectPosition, size: gameObjectSize } = gameObject.transform; // the position of the game object
@@ -215,13 +236,16 @@ class RendererWorker{
     const { context } = this;
 
     context.save();
+
+    context.translate(gameObjectPosition.x, gameObjectPosition.y);
+    context.rotate(gameObject.transform.rotation);
     context.scale(direction, 1);
 
     context.drawImage(
       bitmap,
       slice.x, slice.y, sliceWidth, sliceHeight,
-      (gameObjectPosition.x * direction) - width / 2 + (anchor.x * width),
-      (gameObjectPosition.y - height / 2) + (anchor.y * height),
+      (0 * direction) - width / 2 + (anchor.x * width),
+      (0 - height / 2) + (anchor.y * height),
       width + gapFix,
       height + gapFix
     );
@@ -237,10 +261,10 @@ class RendererWorker{
   renderShape(gameObject){
     const { context } = this;
 
-    context.fillStyle = gameObject.shape.fillColor;
-    context.strokeStyle = gameObject.shape.lineColor;
-    context.lineWidth = gameObject.shape.lineWidth;
-    context.globalAlpha = gameObject.opacity;
+    context.fillStyle = gameObject.shape.color;
+    context.strokeStyle = gameObject.shape.borderColor;
+    context.lineWidth = gameObject.shape.borderWidth;
+    context.globalAlpha = gameObject.shape.opacity;
     context.globalCompositeOperation = gameObject.gco;
 
     if(gameObject.shape.type === "ellipse"){
@@ -251,9 +275,32 @@ class RendererWorker{
       this.drawRectangle(gameObject);
     }
 
-    if(gameObject.shape.type === "shape" && gameObject.shape.vertices.length > 0){
+    if(gameObject.shape.type === "polygon" && gameObject.shape.vertices.length > 0){
       this.drawShape(gameObject);
     }
+  }
+
+  renderDebug(gameObject){
+    const { position, velocity, size } = gameObject.transform;
+    const { context } = this;
+    const offset = size.x/2 + 5;
+
+    // draw velocity and position text
+
+    context.fillStyle = "white";
+    context.font = "10px Arial";
+
+    context.fillText(`Position: ${position.x.toFixed(2)}, ${position.y.toFixed(2)}`, position.x + offset, position.y);
+
+    // draw a line between the position text and the velocity text
+    
+    context.strokeStyle = "white";
+    context.beginPath();
+    context.moveTo(position.x + offset, position.y + 5);
+    context.lineTo(position.x + 120 + offset, position.y + 5);
+    context.stroke();
+
+    context.fillText(`Velocity: ${velocity.x.toFixed(2)}, ${velocity.y.toFixed(2)}`, position.x + offset, position.y + 15);
   }
 
   drawShape(gameObject){
@@ -271,21 +318,42 @@ class RendererWorker{
 
   drawRectangle(gameObject) {
     const { context } = this;
+    const { position, size, rotation } = gameObject.transform;
+
+    const originalTransform = context.getTransform();
+
+    context.translate(position.x, position.y);
+    context.rotate(rotation);
 
     context.beginPath();
-    context.rect(gameObject.transform.position.x - gameObject.transform.size.x / 2, gameObject.transform.position.y - gameObject.transform.size.y / 2, gameObject.transform.size.x, gameObject.transform.size.y);
+    context.rect(-size.x / 2, -size.y / 2, size.x, size.y);
     context.fill();
     context.stroke();
+
+    context.setTransform(originalTransform);
   }
 
-  drawEllipse(gameObject){
+  drawEllipse(gameObject) {
     const { context } = this;
+    const { position, size, rotation } = gameObject.transform;
 
+    // Save the current state of the context
+    const originalTransform = context.getTransform();
+
+    // Apply translation and rotation
+    context.translate(position.x, position.y);
+    context.rotate(rotation);
+
+    // Draw the rotated ellipse
     context.beginPath();
-    context.ellipse(gameObject.transform.position.x, gameObject.transform.position.y, gameObject.transform.size.x / 2, gameObject.transform.size.y / 2, 0, 0, 2 * Math.PI);
+    context.ellipse(0, 0, size.x / 2, size.y / 2, 0, 0, 2 * Math.PI);
     context.fill();
     context.stroke();
-  }
+
+    // Undo the translation and rotation manually
+    context.setTransform(originalTransform);
+}
+
 
   renderLights() {
     this.LightingManager.renderLights();
@@ -304,6 +372,8 @@ class RendererWorker{
     this.antiAliasing = antiAliasing;
     this.LightingManager.canvas.width = this.canvas.width;
     this.LightingManager.canvas.height = this.canvas.height;
+    this.LightingManager.cacheCanvas.width = this.canvas.width;
+    this.LightingManager.cacheCanvas.height = this.canvas.height;
     this.updateGlobalLight(globalLight);
   }
 
@@ -312,6 +382,8 @@ class RendererWorker{
     this.canvas.height = height;
     this.LightingManager.canvas.width = width;
     this.LightingManager.canvas.height = height;
+    this.LightingManager.cacheCanvas.width = width;
+    this.LightingManager.cacheCanvas.height = height;
   }
 }
 

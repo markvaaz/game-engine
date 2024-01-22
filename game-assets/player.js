@@ -7,6 +7,7 @@ import LightSource from "../engine/objects/components/light-source.js";
 import AnimatedSprite from "../engine/objects/components/animated-sprite.js";
 import Sprite from "../engine/objects/components/sprite.js";
 import EllipseShape from "../engine/objects/components/shapes/ellipse-shape.js";
+import RectangleShape from "../engine/objects/components/shapes/rectangle-shape.js";
 
 
 export default class Player extends GameObject{
@@ -15,24 +16,25 @@ export default class Player extends GameObject{
 
   constructor(x, y){
     super();
-    this.add(new EllipseShape(this));
-    this.add(new Collider(this));
+    this.add(CapsuleShape);
+    this.add(Collider);
+    this.debug = true;
     this.position.set(x, y);
-    this.size.set(100);
+    this.size.set(60, 100);
     this.layer = 1
-    this.add(new LightSource(this, 400));
-    this.LightSource.type = "cone";
+    this.add(LightSource, 150);
+    this.LightSource.enabled = false;
+    this.LightSource.type = "cone"; 
     // this.LightSource.angle = -Math.PI / 6.85;
-    this.LightSource.distance = 400;
-    this.LightSource.enabled = true;
+    this.LightSource.distance = 0;
     this.LightSource.add([
-      { start: 0, color: "rgba(255, 255, 255, 0.8)" },
-      { start: 1, color: "transparent" },
+      { start: 0, color: "rgba(255, 100, 255, 1)" },
+      { start: 1, color: "rgba(255, 100, 255, 0.02)" },
     ]);
 
-    this.RigidBody.mass = 50000
+    // this.rotation = Math.PI / 2;
 
-    // this.add(new AnimatedSprite(this, {
+    // this.add(AnimatedSprite, {
     //   srcs: ["/game-assets/swordman/swordman.png"],
     //   position: new Vector(0, 0),
     //   size: new Vector(64, 64),
@@ -41,11 +43,9 @@ export default class Player extends GameObject{
     //   scale: new Vector(3),
     //   anchor: new Vector(0.05, -0.05),
     //   debug: true
-    // }));
+    // });
 
     // this.Render.mode = "sprite";
-
-    this.Render.shape.shadow.enabled = true;
 
     let holding = false;
 
@@ -70,17 +70,19 @@ export default class Player extends GameObject{
     if(Events.keys.has("d") || Events.keys.has("D") || Events.keys.has("ArrowRight") || Events.windowMouse.deltaX > 0) forceX += 1;
 
     const force = new Vector(forceX * speed, forceY * speed);
-  
-    force.limit(speed);
 
     this.position.add(force.multiply(Time.deltaTime));
   }
 
   update(Time){
     this.move(Time);
-    const maxDistance = 10000;
+    const maxDistance = 400;
 
+    // this.LightSource.steps[0].color = `hsl(${Time.frameCount % 360} 100% 50% / 100%)`;
     this.LightSource.angle = this.position.angleBetween(Events.mouse.position);
     this.LightSource.distance = Math.min(maxDistance, this.position.distance(Events.mouse.position));
+    // this.active = true;
+
+    // this.rotation += Time.deltaTime * 0.5;
   }
 }

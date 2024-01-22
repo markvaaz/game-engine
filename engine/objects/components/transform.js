@@ -1,6 +1,7 @@
 import Vector from "../../engine-components/vector.js";
+import Component from "./component.js";
 
-export default class Transform{
+export default class Transform extends Component{
   // Name of the Transform
   static name = 'Transform';
   // Name of the Transform instance
@@ -35,6 +36,7 @@ export default class Transform{
   frames = 0;
 
   constructor(){
+    super();
     this.position.onChange(this.updateFramesWithoutMovement);
     this.Rotation.onChange(() => this.updateFramesWithoutMovement(true));
   }

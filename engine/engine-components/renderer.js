@@ -1,3 +1,5 @@
+import Events from "./events.js";
+
 /**
  * The Renderer class is responsible for rendering game objects on a canvas using a web worker.
  */
@@ -30,6 +32,12 @@ export default class Renderer {
 
     // Append canvas to the document body
     document.body.appendChild(this.canvas);
+
+    // this.canvas.addEventListener('click', e => {
+    //   this.canvas.requestPointerLock({
+    //     unadjustedMovement: true,
+    //   });
+    // })
 
     // Transfer control of the canvas to the web worker
     this.offscreenCanvas = this.canvas.transferControlToOffscreen();

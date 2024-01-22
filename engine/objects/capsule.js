@@ -8,8 +8,8 @@ export default class Capsule extends GameObject {
     super();
 
     this.size.add(width, height);
-    this.add(new CapsuleShape(this));
-    this.add(new RigidBody(this));
-    this.add(new Collider(this));
+    this.add(CapsuleShape);
+    this.add(RigidBody);
+    this.add(Collider);
   }
 }

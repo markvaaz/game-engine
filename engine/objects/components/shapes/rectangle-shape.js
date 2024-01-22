@@ -7,7 +7,7 @@ export default class RectangleShape extends Shape{
   constructor(gameObject){
     super(gameObject);
     this.createShape();
-    this.GameObject.Render.shape.type = 'rectangle';
+    // this.GameObject.Render.shape.type = 'rectangle';
 
     this.GameObject.size.onChange(() => this.createShape());
   }

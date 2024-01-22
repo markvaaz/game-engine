@@ -11,8 +11,8 @@ export default class Polygon extends GameObject {
 
     this.color = 'black';
     this.size.add(width, height);
-    this.add(new PolygonShape(this, sides));
-    this.add(new RigidBody(this));
-    this.add(new Collider(this));
+    this.add(PolygonShape, sides);
+    this.add(RigidBody);
+    this.add(Collider);
   }
 }

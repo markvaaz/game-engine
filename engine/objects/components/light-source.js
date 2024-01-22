@@ -1,6 +1,7 @@
 import Vector from "../../engine-components/vector.js";
+import Component from "./component.js";
 
-export default class LightSource{
+export default class LightSource extends Component{
   // Define a class named LightSource
   static name = 'LightSource';
   name = 'LightSource';
@@ -50,6 +51,7 @@ export default class LightSource{
    * @param {number} radius - The radius of the light source.
    */
   constructor(GameObject, radius = 100) {
+    super();
     this.GameObject = GameObject;
 
     // Set up the light source object in the GameObject's Render component

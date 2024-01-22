@@ -11,8 +11,8 @@ export default class Ellipse extends GameObject {
 
     this.color = 'black';
     this.size.add(width, height);
-    this.add(new EllipseShape(this));
-    this.add(new RigidBody(this));
-    this.add(new Collider(this));
+    this.add(EllipseShape);
+    this.add(RigidBody);
+    this.add(Collider);
   }
 }

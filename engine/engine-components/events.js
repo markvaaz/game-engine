@@ -3,9 +3,16 @@ import Mouse from "./mouse.js";
 class Events{
   static listeners = new Map();
   static keys = new Set();
-  static windowMouse = new Mouse();
+  static windowMouse = new Mouse(true);
   static mouse = new Mouse();
   static mouseWheelTimeout = 0;
+
+  /**
+   * @param {boolean} value
+   */
+  static set mouseLocked(value){
+    Events.windowMouse.locked = value;
+  }
 
   /**
    * @property {number} length - the number of listeners.
@@ -62,13 +69,17 @@ class Events{
 
     if(event.type === "pointerdown"){
       Events.windowMouse.down = true;
+      Events.mouse.down = true;
       Events.windowMouse.buttons.add(event.button);
+      Events.mouse.buttons.add(event.button);
     }
     if(event.type === "pointerup"){
       Events.windowMouse.down = false;
+      Events.mouse.down = false;
       Events.windowMouse.buttons.delete(event.button);
+      Events.mouse.buttons.delete(event.button);
     }
-    if(event.type === "pointermove") Events.windowMouse.setPosition(event.offsetX, event.offsetY);
+    if(event.type === "pointermove") Events.windowMouse.setPosition(event.offsetX, event.offsetY, event.movementX, event.movementY);
     if(event.type === "wheel"){
       Events.windowMouse.wheel.x = event.deltaX;
       Events.windowMouse.wheel.y = event.deltaY;
@@ -84,14 +95,28 @@ class Events{
         Events.mouse.wheel.y = 0;
       }, 100);
     }
-    if(event.type === "keydown") Events.keys.add(event.key);
-    if(event.type === "keyup") Events.keys.delete(event.key);
+    if(event.type === "keydown"){
+      Events.keys.add(event.key);
+      Events.keys.add(event.code);
+    }
+    if(event.type === "keyup"){
+      Events.keys.delete(event.key);
+      Events.keys.delete(event.code);
+    }
+    if(event.type === "blur"){
+      Events.keys.clear();
+      Events.windowMouse.buttons.clear();
+    }
 
     if(Events.listeners.get(eventType)){
-      Events.listeners.get(eventType).forEach(callback => callback(event, ...args));
+      Events.listeners.get(eventType).forEach(callback => callback(...args));
     }
 
     return Events;
+  }
+
+  static emit(event, ...args){
+    Events.dispatch(event, ...args);
   }
 
   static clear(event) {
@@ -224,5 +249,10 @@ class Events{
   Events.listeners.set(event, new Set());
   window.addEventListener(event, Events.dispatch);
 });
+
+addEventListener("pointerlockchange", () => {
+  if(document.pointerLockElement != null) Events.mouseLocked = true;
+  else Events.mouseLocked = false;
+}, true)
 
 export default Events;

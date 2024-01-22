@@ -1,14 +1,36 @@
 import Vector from "../../engine-components/vector.js";
+import Component from "./component.js";
 
-export default class Sprite{
+export default class Sprite extends Component{
+  static name = "Sprite";
+  name = "Sprite";
   #src = "";
   #debug = false;
+  #direction = 1;
 
-  constructor(gameObject, { src, anchor = 0, size = 0, scale = 1, debug = false } = {}) {
+  constructor(gameObject, { src, anchor = 0, size = 0, scale = 1, debug = false, direction = 1 } = {}) {
+    super();
     this.GameObject = gameObject;
+
     this.anchor = new Vector(anchor);
     this.size = new Vector(size);
     this.scale = new Vector(scale);
+
+    this.GameObject.Render.sprite = {
+      src: src,
+      anchor: this.anchor.toObject(),
+      size: this.size.toObject(),
+      slice: {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0
+      },
+      scale: this.scale.toObject(),
+      direction: direction,
+      debug: this.debug  
+    }
+
     this.src = src;
     this.debug = debug;
 
@@ -64,6 +86,16 @@ export default class Sprite{
   set debug(debug){
     this.#debug = debug;
     this.GameObject.Render.sprite.debug = debug;
+    this.GameObject.active = true;
+  }
+
+  get direction(){
+    return this.#direction;
+  }
+
+  set direction(direction){
+    this.#direction = direction;
+    this.GameObject.Render.sprite.direction = direction;
     this.GameObject.active = true;
   }
 }

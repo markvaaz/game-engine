@@ -1,6 +1,7 @@
 import Vector from "../../engine-components/vector.js";
+import Component from "./component.js";
 
-export default class AnimatedSprite {
+export default class AnimatedSprite extends Component{
   static name = "AnimatedSprite";
   name = "AnimatedSprite";
   currentFrame = 0;
@@ -12,6 +13,7 @@ export default class AnimatedSprite {
   #direction = -1;
 
   constructor(gameObject, { srcs, position, size, frameRate, type, debug, scale = 1, anchor = 0, collumns = 1, rows = 1 } = {}) {
+    super();
     this.GameObject = gameObject;
     this.srcs = srcs;
 

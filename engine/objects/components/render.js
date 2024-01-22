@@ -1,6 +1,6 @@
-import SpriteManager from "../../engine-components/sprite-manager.js";
+import Component from "./component.js";
 
-export default class Render{
+export default class Render extends Component{
   // Specifies the name of the Render class
   static name = "Render";
   // Specifies the name property of the Render class
@@ -17,65 +17,29 @@ export default class Render{
   disabled = false;
   // Specifies the layer of the rendered object (default is null)
   layer = null;
-  // Specifies the light source associated with the rendered object (default is null)
+  
+  transform = {
+    position: { x: 0, y: 0 },
+    size: { x: 0, y: 0 },
+    bounds: { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } },
+    velocity: { x: 0, y: 0 },
+    rotation: 0
+  };
+
   lightSource = null;
 
-  // Specifies the shape of the rendered object
-  shape = {
-    // Specifies the vertices of the shape (default is an empty array)
-    vertices: [],
-    // Specifies the line color of the shape (default is "rgba(255, 255, 255, 1)")
-    lineColor: "rgba(255, 255, 255, 0)",
-    // Specifies the fill color of the shape (default is a random HSL color)
-    fillColor: "white",//`hsl(${Math.random() * 360} 100% 50% / 100%)`,
-    // Specifies the type of the shape (default is "shape")
-    type: "shape",
+  shape = null;
 
-    lineWidth: 0,
-    // Specifies the bounds of the shape (default is { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } })
-    bounds: {
-      min: { x: 0, y: 0 },
-      max: { x: 0, y: 0 }
-    },
+  sprite = null;
 
-    center: { x: 0, y: 0 },
+  shadow = null;
 
-    shadow: {
-      enabled: false,
-      color: "#000000",
-      blur: 5,
-      type: "normal"
-    }
-  };
+  darkZone = null;
 
-  // Specifies the transform of the rendered object
-  transform = {
-    // Specifies the position of the object (default is { x: 0, y: 0 })
-    position: { x: 0, y: 0 },
-    // Specifies the size of the object (default is { x: 0, y: 0 })
-    size: { x: 0, y: 0 }
-  };
-
-  // Specifies the sprite of the rendered object
-  sprite = {
-    src: null,
-    anchor: {
-      x: 0,
-      y: 0
-    },
-    size: {
-      x: 0,
-      y: 0
-    },
-    slice:{
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0
-    },
-    scale: { x:1, y:1 },
-    debug: false,
-    direction: 1
+  debug = {
+    enabled: false,
+    color: "gray",
+    lineWidth: 1
   };
 
   /**
@@ -83,6 +47,7 @@ export default class Render{
    * @param {GameObject} gameObject - The game object to initialize the instance with.
    */
   constructor(gameObject) {
+    super();
     // Assign the id and layer properties of the GameObject instance to the corresponding properties of this instance.
     this.id = gameObject.id;
     this.layer = gameObject.layer;
@@ -90,14 +55,32 @@ export default class Render{
     // Convert the size and position properties of the GameObject instance to objects and assign them to the corresponding properties of the transform instance.
     this.transform = {
       size: gameObject.size.toObject(),
-      position: gameObject.position.toObject()
+      position: gameObject.position.toObject(),
+      rotation: gameObject.rotation,
+      velocity: gameObject.Transform.velocity.toObject(),
+      bounds: { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } }
     };
+
+    const updateBounds = () => {
+      const { size, position } = gameObject;
+      this.transform.bounds = {
+        min: {
+          x: position.x - (size.x / 2),
+          y: position.y - (size.y / 2)
+        },
+        max: {
+          x: position.x + (size.x / 2),
+          y: position.y + (size.y / 2)
+        }
+      }
+    }
 
     // Subscribe to the onChange event of the position property of the GameObject instance.
     // Update the x and y properties of the position property of the transform instance when the position changes.
     gameObject.position.onChange((x, y, vector) => {
       this.transform.position.x = vector.x;
       this.transform.position.y = vector.y;
+      updateBounds();
     });
 
     // Subscribe to the onChange event of the size property of the GameObject instance.
@@ -105,7 +88,17 @@ export default class Render{
     gameObject.size.onChange((x, y, vector) => {
       this.transform.size.x = vector.x;
       this.transform.size.y = vector.y;
+      updateBounds();
     });
+
+    gameObject.Transform.Rotation.onChange((x, y, vector) => {
+      this.transform.rotation = vector.x;
+    });
+
+    // gameObject.Transform.velocity.onChange((x, y, vector) => {
+    //   this.transform.velocity.x = vector.x;
+    //   this.transform.velocity.y = vector.y;
+    // });
   }
 
   /**

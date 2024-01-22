@@ -1,50 +1,100 @@
 import Vector from "../../engine-components/vector.js";
+import Component from "./component.js";
 
-export default class Shape{
-  // The name of the Shape
+export default class Shape extends Component{
   static name = 'Shape';
-      
-  // The name of the Shape instance
   name = 'Shape';
-
-  // The edges of the Shape
+  staticEdges = [];
   edges = [];
-
-  // The vertices of the Shape
   vertices = [];
-
-  // The normal axes of the Shape
   normalAxes = [];
-
-  // The type of the Shape
-  type = 'polygon';
-
-  // Whether the Shape has been added
+  #type = 'polygon';
   #added = false;
-
-  // The center of mass of the Shape
   #centerOfMass = null;
-
-  // The bounds of the Shape
   #bounds = {
     min: new Vector(0, 0),
     max: new Vector(0, 0)
   };
 
+  #borderColor = 'rgba(255, 255, 255, 0)';
+  #color = `hsl(${Math.random() * 360} 100% 50% / 100%)`;
+  #borderWidth = 0;
+  #opacity = 1;
+  #darkZone = false;
+
   constructor(gameObject, shape = null){
+    super();
     this.GameObject = gameObject;
+
+    this.GameObject.Render.shape = {
+      vertices: [],
+      borderColor: this.#borderColor,
+      color: this.#color,
+      type: this.#type,
+      borderWidth: this.#borderWidth,
+      darkZone: this.#darkZone,
+      opacity: this.#opacity,
+      bounds: {
+        min: { x: 0, y: 0 },
+        max: { x: 0, y: 0 }
+      },
+  
+      centerOfMass: { x: 0, y: 0 }
+    };
+
     if(shape) this.addVertices(shape);
     this.setListener();
   }
 
   get centerOfMass(){ return this.getCenterOfMass(); }
   get bounds(){ return { min: this.#bounds.min.copy, max: this.#bounds.max.copy } }
+  get borderColor(){ return this.#borderColor }
+  get color(){ return this.#color }
+  get borderWidth(){ return this.#borderWidth }
+  get type(){ return this.#type }
+  get darkZone(){ return this.#darkZone }
+  get opacity(){ return this.#opacity }
+
+  set borderColor(color){
+    this.#borderColor = color;
+    this.GameObject.Render.shape.lineColor = color;
+    this.GameObject.active = true;
+  }
+
+  set color(color){
+    this.#color = color;
+    this.GameObject.Render.shape.fillColor = color;
+    this.GameObject.active = true;
+  }
+
+  set borderWidth(width){
+    this.#borderWidth = width;
+    this.GameObject.Render.shape.lineWidth = width;
+    this.GameObject.active = true;
+  }
+
+  set type(type){
+    this.#type = type;
+    this.GameObject.Render.shape.type = type;
+    this.GameObject.active = true;
+  }
+
+  set darkZone(dark){
+    this.#darkZone = dark;
+    this.GameObject.Render.shape.darkZone = dark;
+    this.GameObject.active = true;
+  }
+
+  set opacity(opacity){
+    this.#opacity = opacity;
+    this.GameObject.Render.shape.opacity = opacity;
+    this.GameObject.active = true;
+  }
 
   setListener(){
     this.GameObject.Transform.Rotation.onChange(this.updateVertices);
     this.GameObject.position.onChange(this.updateVertices);
     this.GameObject.Transform.anchor.onChange(this.updateVertices);
-    this.GameObject.Transform.Rotation.onChange(this.updateNormalAxes);
   }
 
   /**
@@ -55,12 +105,12 @@ export default class Shape{
     // Initialize the area variable
     let area = 0;
     // Set the last vertex index
-    let j = this.vertices.length - 1;
+    let j = this.edges.length - 1;
     
     // Iterate over each vertex of the polygon
-    for(let i = 0; i < this.vertices.length; i++){
+    for(let i = 0; i < this.edges.length; i++){
       // Calculate the area using the Shoelace formula
-      area += (this.vertices[j].x + this.vertices[i].x) * (this.vertices[j].y - this.vertices[i].y);
+      area += (this.edges[j].x + this.edges[i].x) * (this.edges[j].y - this.edges[i].y);
       // Update the last vertex index
       j = i;
     }
@@ -99,9 +149,9 @@ export default class Shape{
   addVertices = (vertices, reset = false) => {
     // Reset the shape if specified
     if(reset){
-      this.edges = [];
+      this.staticEdges = [];
       this.vertices = [];
-      this.normalAxes = [];
+      this.edges = [];
     }
 
     // Add vertices to the render object
@@ -113,7 +163,7 @@ export default class Shape{
       if(!(vertex instanceof Vector)) return;
 
       // Add the vertex to the edges array
-      this.edges.push(vertex.copy.lock());
+      this.staticEdges.push(vertex.copy.lock());
 
       // Add the vertex to the shape
       this.addVertex(vertex);
@@ -122,13 +172,10 @@ export default class Shape{
     // Set the 'added' flag to true
     this.#added = true;
 
-    // Update the normal axes
-    this.updateNormalAxes();
-
     // Update the vertices
     this.updateVertices();
 
-    this.GameObject.Render.shape.center = this.getCenterOfMass().toObject();
+    this.GameObject.Render.shape.centerOfMass = this.getCenterOfMass(true).toObject();
   }
 
   /**
@@ -149,8 +196,9 @@ export default class Shape{
     if(!(vertex instanceof Vector)) return;
     
     vertex.rotate(this.GameObject.rotation);
-    vertex.add(this.GameObject.position);
     vertex.subtract(this.GameObject.Transform.anchor);
+    this.edges.push(vertex.copy);
+    vertex.add(this.GameObject.position);
 
     this.vertices.push(vertex);
   }
@@ -163,6 +211,7 @@ export default class Shape{
     if (!this.#added || !this.GameObject.active) return;
 
     this.vertices = [];
+    this.edges = [];
 
     // Initialize the minimum and maximum coordinates
     let minX = Number.POSITIVE_INFINITY;
@@ -171,56 +220,43 @@ export default class Shape{
     let maxY = Number.NEGATIVE_INFINITY;
 
     // Iterate over the edges and process each vertex
-    for (let i = 0; i < this.edges.length; i++) {
-      const vertex = new Vector(this.edges[i]);
+    for (let i = 0; i < this.staticEdges.length; i++) {
+      const vertex = new Vector(this.staticEdges[i]);
 
       // Rotate the vertex based on the object's rotation
       vertex.rotate(this.GameObject.rotation);
+      
+      // Subtract the object's anchor from the vertex
+      vertex.subtract(this.GameObject.anchor);
+      
+      this.edges.push(vertex.copy);
 
       // Add the object's position to the vertex
       vertex.add(this.GameObject.position);
-
-      // Subtract the object's anchor from the vertex
-      vertex.subtract(this.GameObject.anchor);
-
-      // Add the vertex to the vertices array
-      this.vertices.push(vertex);
 
       // Update the minimum and maximum coordinates
       minX = Math.min(minX, vertex.x);
       minY = Math.min(minY, vertex.y);
       maxX = Math.max(maxX, vertex.x);
       maxY = Math.max(maxY, vertex.y);
+
+      // Add the vertex to the vertices array
+      this.vertices.push(vertex);
     }
 
     // Set the bounds using the minimum and maximum coordinates
     this.#bounds.min.set(minX, minY);
     this.#bounds.max.set(maxX, maxY);
 
+    if(this.GameObject.Transform.previousRotation !== this.GameObject.rotation){
+      this.GameObject.Render.addVertices(this.edges);
+    }
+
     // Update the bounds of the object's renderer
     this.GameObject.Render.updateBounds(this.#bounds);
-  }
 
-  /**
-   * Update the normal axes of the shape.
-   */
-  updateNormalAxes = () => {
-    // Skip if not added
-    if (!this.#added) return;
-
-    // Skip if added but not active
-    if (this.#added && !this.GameObject.active) return;
-
-    this.normalAxes = [];
-
-    // Calculate normal axes for each edge
-    for (let i = 0; i < this.edges.length; i++) {
-      const j = (i + 1) % this.edges.length;
-      // Calculate the edge vector
-      const edge = this.edges[j].copy.rotate(this.GameObject.rotation).subtract(this.edges[i].rotate(this.GameObject.rotation));
-      edge.y = -edge.y;
-      // Normalize the edge vector and add it to the normal axes array
-      this.normalAxes.push(edge.normalize());
+    if(this.GameObject.Shadow && !this.GameObject.Shadow.added){
+      this.GameObject.Shadow.add(this.edges, true);
     }
   }
 
@@ -239,7 +275,7 @@ export default class Shape{
     let y = 0;
 
     // Calculate the sum of the x and y coordinates of all vertices.
-    for (let vertex of this.edges) {
+    for (let vertex of this.staticEdges) {
       x += vertex.x;
       y += vertex.y;
     }

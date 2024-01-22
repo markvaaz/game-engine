@@ -424,6 +424,11 @@ export default class Vector{
     return this;
   }
 
+  unsetConstraints(){
+    this.#constrained = false;
+    return this;
+  }
+
   /**
    * @method constrain
    * @description Constrains the vector to the constraints.
@@ -693,6 +698,12 @@ export default class Vector{
   normalize(){
     const length = this.magnitude;
     if (length !== 0) this.multiply(1 / length);
+    return this;
+  }
+
+  negate(){
+    this.x = -this.x;
+    this.y = -this.y;
     return this;
   }
 

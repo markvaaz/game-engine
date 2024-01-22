@@ -79,13 +79,14 @@
   "license": "ISC",
   "type": "module",
   "build": {
-    "appId": "com.markvaaz.engine",
-    "productName": "Engine",
+    "appId": "com.markvaaz.pixaria",
+    "productName": "Pixaria Engine",
     "directories": {
       "output": "dist"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "icon.ico"
     }
   }
 }

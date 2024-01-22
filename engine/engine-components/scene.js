@@ -2,6 +2,7 @@ import Camera from "../objects/camera.js";
 import GameObject from "../objects/game-object.js";
 import Events from "./events.js";
 import Physics from "./physics.js";
+import SAT from "./sat.js";
 
 export default class Scene{
   // Define a static property "name" with the value 'Scene'
@@ -21,6 +22,8 @@ export default class Scene{
   
   // Create a new Physics object
   Physics = new Physics();
+
+  CollisionManager = new SAT({ cellSize: 64 });
   
   // Create a new Camera object with the name "Main"
   Camera = new Camera("Main");
@@ -93,7 +96,7 @@ export default class Scene{
     const { updateMode, id, children } = gameObject;
 
     if(updateMode === "all" || updateMode === "world"){
-      this.Physics.add(gameObject);
+      this.CollisionManager.add(gameObject);
     }
     
     this.GameObjects.set(id, gameObject);
@@ -119,7 +122,7 @@ export default class Scene{
 
     this.Renderer.delete(gameObject);
 
-    this.Physics.remove(gameObject);
+    this.CollisionManager.delete(gameObject);
 
     if(gameObject.children.size > 0){
       gameObject.children.forEach(child => {
@@ -195,6 +198,8 @@ export default class Scene{
       // Update the visibility of the game object
       this.updateVisibility(gameObject);
   
+      this.Physics.applyPhysics(gameObject);
+
       // Call the beforeUpdate functions of the game object
       gameObject.defaultBeforeUpdate?.(Time);
       gameObject.beforeUpdate?.(Time);
@@ -205,23 +210,16 @@ export default class Scene{
       // Call the update function of the game object
       gameObject.update?.(Time);
   
-      // Update the physics of the game object
-      this.Physics.update(gameObject);
-  
       // Call the afterUpdate functions of the game object
       gameObject.defaultAfterUpdate?.(Time);
       gameObject.afterUpdate?.(Time);
   
-      // Perform collision detection with other game objects
-      this.Physics.collisions(gameObject, Time);
-      // Update the physics of the game object again (if necessary)
-  
-      this.Physics.update(gameObject);
-  
+      this.CollisionManager.updateHash(gameObject);
       // Update render information for the game object
       this.updateRenderInformation(gameObject);
     }
-  
+
+    this.CollisionManager.update(Time)
     // Update the renderer with the queue of objects to render
     this.Renderer.update(this.queueToRender);
   }

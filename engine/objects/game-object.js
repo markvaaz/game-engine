@@ -1,50 +1,50 @@
-import Vector from "../engine-components/vector.js";
+import Component from "./components/component.js";
 import Render from "./components/render.js";
 import Transform from "./components/transform.js";
 
 export default class GameObject {
-   // The name of the game object
-   static name = 'GameObject';
-    
-   // The name of the game object (instance property)
-   name = 'GameObject';
-   
-   // A map to store the components of the game object
-   components = new Map();
-   
-   // A map to store the children of the game object
-   children = new Map();
-   
-   // A set to store the game object's collision targets
-   collidesOnlyWith = new Set();
-   
-   // A set to store the game object's ignored collisions
-   ignoredCollisions = new Set();
-   
-   // A set to store the game object's trigger-only collisions
-   triggerOnlyCollisions = new Set();
-   
-   // Indicates if the game object is destroyed or not
-   destroyed = false;
-   
-   // The scene the game object belongs to
-   Scene = null;
-   
-   // Indicates if the game object is visible or not
-   visible = true;
-   
-   // The update mode of the game object
-   updateMode = "all";
-   
-   // Private field to store the layer of the game object
-   #layer = 0;
-   
-   // Private field to store the ID of the game object
-   #id = "";
+  // The name of the game object
+  static name = 'GameObject';
+  
+  // The name of the game object (instance property)
+  name = 'GameObject';
+  
+  // A map to store the components of the game object
+  components = new Map();
+  
+  // A map to store the children of the game object
+  children = new Map();
+  
+  // A set to store the game object's collision targets
+  collidesOnlyWith = new Set();
+  
+  // A set to store the game object's ignored collisions
+  ignoredCollisions = new Set();
+  
+  // A set to store the game object's trigger-only collisions
+  triggerOnlyCollisions = new Set();
+  
+  // Indicates if the game object is destroyed or not
+  destroyed = false;
+  
+  // The scene the game object belongs to
+  Scene = null;
+  
+  // Indicates if the game object is visible or not
+  visible = true;
+  
+  // The update mode of the game object
+  updateMode = "all";
+  
+  // Private field to store the layer of the game object
+  #layer = 0;
+  
+  // Private field to store the ID of the game object
+  #id = "";
   
   constructor(){
-    this.add(new Transform(this));
-    this.add(new Render(this));
+    this.add(Transform);
+    this.add(Render);
   }
 
   /**
@@ -77,24 +77,28 @@ export default class GameObject {
     return this.Transform.bounds;
   }
 
+  get debug(){ return this.Render.debug.enabled; }
+  set debug(value){ this.Render.debug.enabled = value; }
+
   /**
-   * Adds a component to the parent game object.
+   * Adds a component or a game object to the parent game object.
    * 
-   * @param {GameObject} component - The component to be added.
-   * @returns {GameObject} The parent game object.
+   * @param {Component|GameObject} Component - The component class or game object instance to be added.
    */
-  add(component) {
-    if (component instanceof GameObject) {
+  add(Component, ...args) {
+    if(Component instanceof GameObject){
       // Set the parent of the component
-      component.Parent = this;
+      Component.Parent = this;
 
       // Add the component to the trigger-only collisions set of the parent and the component itself
-      this.triggerOnlyCollisions.add(component);
-      component.triggerOnlyCollisions.add(this);
+      this.triggerOnlyCollisions.add(Component);
+      Component.triggerOnlyCollisions.add(this);
       
       // Add the component to the children map of the parent game object
-      return this.children.set(component.id, component);
+      return this.children.set(Component.id, Component);
     }
+
+    const component = new Component(this, ...args);
 
     // Add the component to the parent game object using its name as a property
     this[component.name] = component;
