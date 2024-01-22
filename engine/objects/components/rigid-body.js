@@ -1,6 +1,7 @@
 import Vector from "../../engine-components/vector.js";
+import Component from "./component.js";
 
-export default class RigidBody{
+export default class RigidBody extends Component{
   static name = 'RigidBody';
   name = 'RigidBody';
   #static = false;
@@ -9,22 +10,34 @@ export default class RigidBody{
   #density = 1;
   velocity = new Vector();
   acceleration = new Vector();
-  friction = 0.2;
-  drag = 1;
-  restitution = 1;
-  disableGravity = false;
-  disableWind = false;
   maxSpeed = Infinity;
+  restitution = 0.5;
+  friction = 0.01;
+  centerOfMass = new Vector();
   lastFrame = 0;
+  grounded = false;
 
   constructor(gameObject){
+    super();
     this.GameObject = gameObject;
     this.getShapeData();
+
+    this.velocity.onChange((x, y, vector) => {
+      this.GameObject.Render.transform.velocity.x = vector.x;
+      this.GameObject.Render.transform.velocity.y = vector.y;
+    })
+
+    this.GameObject.size.onChange(() => this.getShapeData());
   }
 
-  getShapeData(){
+  getShapeData() {
     const shape = this.GameObject.Shape;
-    if(!shape) return console.error("RigidBody: No shape component found on game object.");
+
+    if (!shape) {
+      throw new Error("RigidBody: No shape component found on game object.");
+    }
+
+    this.centerOfMass = shape.getCenterOfMass();
     this.area = shape.getArea();
     this.#mass = this.#density * this.area;
     this.#inverseMass = 1 / this.mass;
@@ -57,14 +70,6 @@ export default class RigidBody{
     this.#inverseMass = 1 / this.#mass;
   }
 
-  get position(){
-    return this.GameObject.position;
-  }
-
-  get lastPosition(){
-    return this.GameObject.lastPosition;
-  }
-
   get speed(){
     return this.velocity.magnitude;
   }
@@ -76,93 +81,36 @@ export default class RigidBody{
   set static(value){
     this.#static = value;
     if(value){
-      this.disableGravity = true;
-      this.disableWind = true;
       this.velocity.set(0, 0);
       this.acceleration.set(0, 0);
       this.velocity.lock();
       this.acceleration.lock();
     }else{
-      this.disableGravity = true;
-      this.disableWind = true;
       this.velocity.unlock();
       this.acceleration.unlock();
     }
   }
 
+  applyTorque(torque) {
+    this.torque += torque;
+  }
+
   applyForce(force){
-    if(!isNaN(force)) force = new Vector(force, force);
-    else if(force instanceof Vector) force = force.copy;
-
-    this.acceleration.add(force.mult(this.#inverseMass));
-
-    return this;
+    this.acceleration.add(force.copy.multiply(this.#inverseMass));
   }
 
   applyImpulse(impulse){
-    if(!isNaN(impulse)) impulse = new Vector(impulse, impulse);
-    else if(impulse instanceof Vector) impulse = impulse.copy;
-
-    this.velocity.add(impulse);
-
-    this.velocity.limit(this.maxSpeed);
-
-    return this;
-  }
-
-  applyDrag(c){
-    const drag = this.velocity.negated.normalized.multiply(c);
-    this.applyForce(drag);
-
-    return this;
+    this.velocity.add(impulse.copy.multiply(this.#inverseMass));
   }
 
   applyFriction(friction){
-    if(friction instanceof Vector){
-      this.acceleration.add(friction.negated);
-    }else{
-      const frictionMagnitude = this.velocity.magnitude * friction;
-      const frictionDirection = this.velocity.negated.normalized;
-      const frictionForce = frictionDirection.multiply(frictionMagnitude);
-  
-      this.acceleration.add(frictionForce);
-    }
-
-    return this;
-  }
-
-  applyGravity(gravity){
-    if(!isNaN(gravity)) gravity = new Vector(gravity, gravity);
-    else if(gravity instanceof Vector) gravity = gravity.copy;
-
-    this.acceleration.add(gravity);
-
-    return this;
-  }
-
-  applyWind(wind){
-    if(!isNaN(wind)) wind = new Vector(wind, wind);
-    else if(wind instanceof Vector) wind = wind.copy;
-
-    this.acceleration.add(wind.mult(this.#inverseMass).multiply(this.drag));
-
-    return this;
-  }
-
-  setVelocity(velocity){
-    if(!isNaN(velocity)) velocity = new Vector(velocity, velocity);
-    this.velocity.set(velocity);
-
-    return this;
+    this.velocity.multiply(1 - friction);
   }
 
   update = (Time) => {
     this.velocity.add(this.acceleration);
-
     this.velocity.limit(this.maxSpeed);
-
     this.GameObject.position.add(this.velocity.copy);
-
     this.acceleration.multiply(0);
   }
 }

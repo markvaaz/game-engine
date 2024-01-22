@@ -23,7 +23,7 @@ export default class Vector{
   #constraints = { x: { min: null, max: null }, y: { min: null, max: null } };
   #constrained = false;
   #callbacks = new Set();
-  #changed = null;
+  
   constructor(x, y){
     this.set(x, y);
   }
@@ -211,12 +211,21 @@ export default class Vector{
    * @returns {Vector} A copy of the vector.
    * @readonly
    */
-  get copy(){
-    const copy = new Vector(this.x, this.y);
-    if(this.#constrained) copy.setConstraints(this.#constraints.x.min, this.#constraints.x.max, this.#constraints.y.min, this.#constraints.y.max);
-    // if(this.#locked) copy.lock();
-    return copy;
+  get copy() {
+    if (this.#constrained) {
+      const copy = new Vector(this.x, this.y);
+      copy.setConstraints(
+        this.#constraints.x.min,
+        this.#constraints.x.max,
+        this.#constraints.y.min,
+        this.#constraints.y.max
+      );
+      return copy;
+    } else {
+      return new Vector(this.x, this.y);
+    }
   }
+  
 
   /**
    * @method get locked
@@ -356,6 +365,18 @@ export default class Vector{
   }
 
   /**
+   * @method projectOnto
+   * @description Projects the vector onto the given vector.
+   * @param {Vector} vector - The vector to project onto.
+   * @returns {Vector} The projected vector.
+   */
+  projectOnto(vector){
+    const unitV = vector.normalized;
+    const projectionLength = this.dot(unitV);
+    return unitV.multiply(projectionLength);
+  }
+
+  /**
    * @method rotate
    * @description Rotates the vector by the given angle.
    * @param {number} angle - The angle to rotate the vector by.
@@ -400,6 +421,11 @@ export default class Vector{
     this.#constraints.y.min = minY;
     this.#constraints.y.max = maxY;
 
+    return this;
+  }
+
+  unsetConstraints(){
+    this.#constrained = false;
     return this;
   }
 
@@ -672,6 +698,12 @@ export default class Vector{
   normalize(){
     const length = this.magnitude;
     if (length !== 0) this.multiply(1 / length);
+    return this;
+  }
+
+  negate(){
+    this.x = -this.x;
+    this.y = -this.y;
     return this;
   }
 

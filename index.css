@@ -3,23 +3,31 @@ body{
   padding: 0;
   font-family: sans-serif;
   background: #333;
+  cursor: none;
 }
 
-#fps{
+#fps, #added-objects{
   --margin: 8px;
   position: absolute;
   top: var(--margin);
   right: var(--margin);
-  z-index: 1000;
-  font-size: 1.2em;
+  z-index: 2;
+  font-size: 2em;
   font-weight: bold;
-  background: #a13ae6;
+  /* background: #990000; */
   padding: 5px;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 6px;
+  pointer-events: none;
+  /* display: none; */
+}
+
+#added-objects{
+  right: unset;
+  left: var(--margin);
 }
 
 .title{
@@ -31,6 +39,73 @@ body{
   color: #fff;
   font-size: 80px;
   text-shadow: 0 0 30px #000;
+}
+
+#message{
+  display: none;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 15px;
+  font-size: 2em;
+  color: #fff;
+  font-weight: bold;
+  background: rgba(0, 0, 0);
+  animation-delay: 3s;
+  animation-duration: 3s;
+  animation-name: fade-out;
+  animation-fill-mode: forwards;
+}
+
+#logo{
+  display: none;
+  position: absolute;
+  inset: 0;
+  background-image: url('pixeria-logo.png');
+  background-size: 250px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: #000b29;
+  animation-delay: 1s;
+  animation-duration: 1s;
+  animation-name: fade-out;
+  animation-fill-mode: forwards;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#engine-cursor{
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+#engine-cursor:after{
+  content: "";
+  translate: -35% -20%;
+  rotate: -120deg;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: white;
+  font-size: 1.5em;
+  color: #fff;
+  text-shadow: -5px 3px 5px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 canvas {

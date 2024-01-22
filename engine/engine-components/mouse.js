@@ -4,8 +4,20 @@ export default class Mouse{
   #position = new Vector();
   #previous = new Vector();
   #down = false;
-  #wheel = 0;
+  #wheel = new Vector();
   #buttons = new Set();
+  #movement = new Vector();
+  #element = null;
+  locked = false;
+  
+  constructor(window = false){
+    if(window){
+      this.#element = document.createElement("div");
+      this.#element.id = "engine-cursor";
+  
+      if(!document.getElementById("engine-cursor")) document.body.appendChild(this.#element);
+    }
+  }
 
   /**
    * @property {Vector} position - the position of the mouse.
@@ -23,7 +35,7 @@ export default class Mouse{
    * @property {Vector} movement - the movement of the mouse.
    * @readonly
    */
-  get movement(){ return this.#previous.copy.sub(this.#position) }
+  get movement(){ return this.#movement.copy }
 
   /**
    * @property {boolean} down - whether or not the mouse is down.
@@ -38,10 +50,6 @@ export default class Mouse{
    * @property {number} wheel - the amount the mouse wheel has been scrolled.
    */
   get wheel(){ return this.#wheel }
-  set wheel(value){
-    if(typeof value !== "number") return this.#wheel;
-    this.#wheel = value;
-  }
 
   /**
    * @property {Set} buttons - the buttons that are currently pressed.
@@ -68,9 +76,25 @@ export default class Mouse{
     this.#position.y = value;
   }
 
-  setPosition(x, y){
+  setPosition(x, y, movementX = 0, movementY = 0){
     if(x instanceof Vector) return this.setPosition(x.x, x.y);
-    this.x = x;
-    this.y = y;
+
+    if(this.locked){
+      this.#position.setConstraints(0, innerWidth, 0, innerHeight);
+      this.#previous.setConstraints(0, innerWidth, 0, innerHeight);
+      this.x += movementX;
+      this.y += movementY;
+      this.movement.set(this.previous.sub(this.position));
+    }else{
+      this.x = x;
+      this.y = y;
+      this.#position.unsetConstraints();
+      this.#previous.unsetConstraints();
+      this.movement.set(movementX, movementY);
+    }
+
+    if(!this.#element) return;
+    this.#element.style.left = `${this.x}px`;
+    this.#element.style.top = `${this.y}px`;
   }
 }

@@ -11,8 +11,8 @@ export default class Rectangle extends GameObject {
 
     this.color = 'black';
     this.size.add(width, height);
-    this.add(new RectangleShape(this));
-    this.add(new RigidBody(this));
-    this.add(new Collider(this));
+    this.add(RectangleShape);
+    this.add(RigidBody);
+    this.add(Collider);
   }
 }

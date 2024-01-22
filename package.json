@@ -5,7 +5,7 @@
   "name": "game-engine",
   "version": "1.0.0",
   "description": "A simple 2D game engine with javascript canvas",
-  "main": "main.js",
+  "main": "electron-setup.js",
   "dependencies": {
     "boolean": "^3.2.0",
     "buffer-crc32": "^0.2.13",
@@ -79,13 +79,14 @@
   "license": "ISC",
   "type": "module",
   "build": {
-    "appId": "com.markvaaz.engine",
-    "productName": "Engine",
+    "appId": "com.markvaaz.pixaria",
+    "productName": "Pixaria Engine",
     "directories": {
       "output": "dist"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "icon.ico"
     }
   }
 }

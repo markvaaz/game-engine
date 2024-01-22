@@ -1,12 +1,14 @@
 import Vector from "../../engine-components/vector.js";
+import Component from "./component.js";
 
-export default class Shape{
+export default class Shape extends Component{
   static name = 'Shape';
   name = 'Shape';
+  staticEdges = [];
   edges = [];
   vertices = [];
   normalAxes = [];
-  type = 'polygon';
+  #type = 'polygon';
   #added = false;
   #centerOfMass = null;
   #bounds = {
@@ -14,139 +16,293 @@ export default class Shape{
     max: new Vector(0, 0)
   };
 
+  #borderColor = 'rgba(255, 255, 255, 0)';
+  #color = `hsl(${Math.random() * 360} 100% 50% / 100%)`;
+  #borderWidth = 0;
+  #opacity = 1;
+  #darkZone = false;
+
   constructor(gameObject, shape = null){
+    super();
     this.GameObject = gameObject;
+
+    this.GameObject.Render.shape = {
+      vertices: [],
+      borderColor: this.#borderColor,
+      color: this.#color,
+      type: this.#type,
+      borderWidth: this.#borderWidth,
+      darkZone: this.#darkZone,
+      opacity: this.#opacity,
+      bounds: {
+        min: { x: 0, y: 0 },
+        max: { x: 0, y: 0 }
+      },
+  
+      centerOfMass: { x: 0, y: 0 }
+    };
+
     if(shape) this.addVertices(shape);
     this.setListener();
   }
 
-  get position(){ return this.GameObject.position; }
-  get rotation(){ return this.GameObject.rotation; }
-  set rotation(value){ this.GameObject.rotation = value; }
-  get anchor(){ return this.GameObject.anchor; }
-  get size(){ return this.GameObject.size; }
   get centerOfMass(){ return this.getCenterOfMass(); }
   get bounds(){ return { min: this.#bounds.min.copy, max: this.#bounds.max.copy } }
+  get borderColor(){ return this.#borderColor }
+  get color(){ return this.#color }
+  get borderWidth(){ return this.#borderWidth }
+  get type(){ return this.#type }
+  get darkZone(){ return this.#darkZone }
+  get opacity(){ return this.#opacity }
+
+  set borderColor(color){
+    this.#borderColor = color;
+    this.GameObject.Render.shape.lineColor = color;
+    this.GameObject.active = true;
+  }
+
+  set color(color){
+    this.#color = color;
+    this.GameObject.Render.shape.fillColor = color;
+    this.GameObject.active = true;
+  }
+
+  set borderWidth(width){
+    this.#borderWidth = width;
+    this.GameObject.Render.shape.lineWidth = width;
+    this.GameObject.active = true;
+  }
+
+  set type(type){
+    this.#type = type;
+    this.GameObject.Render.shape.type = type;
+    this.GameObject.active = true;
+  }
+
+  set darkZone(dark){
+    this.#darkZone = dark;
+    this.GameObject.Render.shape.darkZone = dark;
+    this.GameObject.active = true;
+  }
+
+  set opacity(opacity){
+    this.#opacity = opacity;
+    this.GameObject.Render.shape.opacity = opacity;
+    this.GameObject.active = true;
+  }
 
   setListener(){
     this.GameObject.Transform.Rotation.onChange(this.updateVertices);
-    this.position.onChange(this.updateVertices);
-    this.anchor.onChange(this.updateVertices);
-    this.GameObject.Transform.Rotation.onChange(this.updateNormalAxes);
+    this.GameObject.position.onChange(this.updateVertices);
+    this.GameObject.Transform.anchor.onChange(this.updateVertices);
   }
 
+  /**
+   * Calculate the area of a polygon.
+   * @returns {number} The area of the polygon.
+   */
   getArea = () => {
+    // Initialize the area variable
     let area = 0;
-    let j = this.vertices.length - 1;
-    for(let i = 0; i < this.vertices.length; i++){
-      area += (this.vertices[j].x + this.vertices[i].x) * (this.vertices[j].y - this.vertices[i].y);
+    // Set the last vertex index
+    let j = this.edges.length - 1;
+    
+    // Iterate over each vertex of the polygon
+    for(let i = 0; i < this.edges.length; i++){
+      // Calculate the area using the Shoelace formula
+      area += (this.edges[j].x + this.edges[i].x) * (this.edges[j].y - this.edges[i].y);
+      // Update the last vertex index
       j = i;
     }
+    
+    // Return the absolute value of the area divided by 2
     return Math.abs(area / 2);
   }
 
+  /**
+   * Adds a shape to the collection of shapes.
+   *
+   * @param {any} shape - The shape to be added.
+   * @return {undefined} This function does not return a value.
+   */
   addShape(shape){
     if(typeof shape === 'array') return;
     this.addVertices(shape);
   }
 
+  /**
+   * Copies the given shape by adding its vertices to the current shape.
+   *
+   * @param {Shape} shape - The shape to be copied.
+   */
   copyShape(shape){
     if(!(shape instanceof Shape)) return;
     this.addVertices(shape.vertices);
   }
 
+  /**
+   * Adds vertices to the shape.
+   * 
+   * @param {Array} vertices - The vertices to be added.
+   * @param {Boolean} reset - Whether to reset the shape before adding vertices.
+   */
   addVertices = (vertices, reset = false) => {
+    // Reset the shape if specified
     if(reset){
-      this.edges = [];
+      this.staticEdges = [];
       this.vertices = [];
-      this.normalAxes = [];
+      this.edges = [];
     }
 
+    // Add vertices to the render object
+    this.GameObject.Render.addVertices(vertices);
+
+    // Iterate over each vertex and add it to the shape
     vertices.forEach((vertex, i) => {
-      if(!(vertex instanceof Vector)) return
-      this.edges.push(vertex.copy.lock());
+      // Skip non-Vector vertices
+      if(!(vertex instanceof Vector)) return;
+
+      // Add the vertex to the edges array
+      this.staticEdges.push(vertex.copy.lock());
+
+      // Add the vertex to the shape
       this.addVertex(vertex);
     });
-    
+
+    // Set the 'added' flag to true
     this.#added = true;
 
-    this.updateNormalAxes();
+    // Update the vertices
     this.updateVertices();
+
+    this.GameObject.Render.shape.centerOfMass = this.getCenterOfMass(true).toObject();
   }
 
-  replaceVertices = (vertices) => this.addVertices(vertices, true);
+  /**
+   * Replaces the existing vertices in the graph with the given vertices.
+   *
+   * @param {Array} vertices - The new set of vertices to replace the existing ones.
+   */
+  replaceVertices(vertices){
+    this.addVertices(vertices, true);
+  }
 
-  addVertex = (vertex) => {
+  /**
+   * Adds a vertex to the list of vertices.
+   *
+   * @param {Vector} vertex - The vertex to be added.
+   */
+  addVertex(vertex){
     if(!(vertex instanceof Vector)) return;
-    vertex = vertex.copy;
-    vertex.rotate(this.rotation);
-    vertex.add(this.position);
-    vertex.subtract(this.anchor);
+    
+    vertex.rotate(this.GameObject.rotation);
+    vertex.subtract(this.GameObject.Transform.anchor);
+    this.edges.push(vertex.copy);
+    vertex.add(this.GameObject.position);
 
     this.vertices.push(vertex);
   }
 
+  /**
+   * Updates the vertices of the object based on the edges, rotation, position, and anchor.
+   */
   updateVertices = () => {
-    if(!this.#added || this.GameObject.inactive) return;
+    // Check if the object has been added or is active
+    if (!this.#added || !this.GameObject.active) return;
 
     this.vertices = [];
-    
+    this.edges = [];
+
+    // Initialize the minimum and maximum coordinates
     let minX = Number.POSITIVE_INFINITY;
     let minY = Number.POSITIVE_INFINITY;
     let maxX = Number.NEGATIVE_INFINITY;
     let maxY = Number.NEGATIVE_INFINITY;
-  
-    for(let i = 0; i < this.edges.length; i++){
-      const vertex = this.edges[i].copy;
+
+    // Iterate over the edges and process each vertex
+    for (let i = 0; i < this.staticEdges.length; i++) {
+      const vertex = new Vector(this.staticEdges[i]);
+
+      // Rotate the vertex based on the object's rotation
+      vertex.rotate(this.GameObject.rotation);
       
-      vertex.rotate(this.rotation);
-      vertex.add(this.position);
-      vertex.subtract(this.anchor);
-  
-      this.vertices.push(vertex);
-  
+      // Subtract the object's anchor from the vertex
+      vertex.subtract(this.GameObject.anchor);
+      
+      this.edges.push(vertex.copy);
+
+      // Add the object's position to the vertex
+      vertex.add(this.GameObject.position);
+
+      // Update the minimum and maximum coordinates
       minX = Math.min(minX, vertex.x);
       minY = Math.min(minY, vertex.y);
       maxX = Math.max(maxX, vertex.x);
       maxY = Math.max(maxY, vertex.y);
+
+      // Add the vertex to the vertices array
+      this.vertices.push(vertex);
     }
-  
-    this.#bounds.min.set(new Vector(minX, minY));
-    this.#bounds.max.set(new Vector(maxX, maxY));
+
+    // Set the bounds using the minimum and maximum coordinates
+    this.#bounds.min.set(minX, minY);
+    this.#bounds.max.set(maxX, maxY);
+
+    if(this.GameObject.Transform.previousRotation !== this.GameObject.rotation){
+      this.GameObject.Render.addVertices(this.edges);
+    }
+
+    // Update the bounds of the object's renderer
+    this.GameObject.Render.updateBounds(this.#bounds);
+
+    if(this.GameObject.Shadow && !this.GameObject.Shadow.added){
+      this.GameObject.Shadow.add(this.edges, true);
+    }
   }
 
-  updateNormalAxes = () => {
-    if(!this.#added) return;
+  /**
+   * Calculates the center of mass of the object.
+   * @returns {Vector} The center of mass as a Vector.
+   */
+  getCenterOfMass = (dontAddPosition = false) => {
+    // If the object has not been added, return early.
+    if (!this.#added) return;
 
-    if(this.#added && this.GameObject.inactive) return;
+    // If the center of mass has already been calculated, return it.
+    if (this.#centerOfMass) return this.#centerOfMass.copy.add(this.GameObject.position);
 
-    this.normalAxes = [];
-    
-    for(let i = 0; i < this.edges.length; i++){
-      const j = (i + 1) % this.edges.length;
-      const edge = this.edges[j].copy.rotate(this.rotation).subtract(this.edges[i].rotate(this.rotation));
-      const normal = new Vector(edge.y, -edge.x).normalized;
-      this.normalAxes.push(normal);
-    }
-  }
-
-  getCenterOfMass = () => {
-    if(!this.#added) return;
-    if(this.#centerOfMass) return this.#centerOfMass.copy.add(this.GameObject.position);
     let x = 0;
     let y = 0;
-    for(let vertex of this.edges){
+
+    // Calculate the sum of the x and y coordinates of all vertices.
+    for (let vertex of this.staticEdges) {
       x += vertex.x;
       y += vertex.y;
     }
 
+    // Calculate the center of mass as the average of the x and y coordinates.
     this.#centerOfMass = new Vector(x / this.vertices.length, y / this.vertices.length);
 
+    if(dontAddPosition) return this.#centerOfMass;
+
+    // Adjust the center of mass by the position of the GameObject.
     return this.#centerOfMass.copy.add(this.GameObject.position);
   }
 
-  isWithinBounds = (shape, offset = 0) => {
-    if(!shape) return false;
-    return this.bounds.min.x - offset < shape.bounds.max.x && this.bounds.max.x + offset > shape.bounds.min.x && this.bounds.min.y - offset < shape.bounds.max.y && this.bounds.max.y + offset > shape.bounds.min.y;
-  }  
+  /**
+   * Checks if the current bounds are within the given bounds.
+   * @param {Object} bounds - The bounds to compare against.
+   * @param {number} [offset=0] - Optional offset value to expand or shrink the bounds.
+   * @returns {boolean} - Returns true if the current bounds are within the given bounds, false otherwise.
+   */
+  isWithinBounds = (bounds, offset = 0) => {
+    // If bounds is falsy, return false
+    if(!bounds) return false;
+
+    // Check if the current bounds are within the given bounds
+    return this.bounds.min.x - offset < bounds.max.x && 
+           this.bounds.max.x + offset > bounds.min.x && 
+           this.bounds.min.y - offset < bounds.max.y && 
+           this.bounds.max.y + offset > bounds.min.y;
+  }
 }
