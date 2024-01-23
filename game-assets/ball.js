@@ -11,7 +11,7 @@ export default class Ball extends Ellipse{
   constructor(x, y){
     super(64, 64, 4);
     this.position.set(x, y);
-    this.size.set(120, 120);
+    this.size.set(500);
     this.speed = 30;
     this.direction = new Vector(3, 3);
     this.add(Shadow);

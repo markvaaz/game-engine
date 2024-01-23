@@ -1,8 +1,10 @@
 import Vector from "./vector.js";
+import SAT from "./sat.js";
 
 export default class Physics{
   wind = new Vector(0, 0);
   airDrag = 0.05;
+  CollisionManager = new SAT();
 
   applyPhysics(gameObject){
     if(!gameObject.RigidBody) return;

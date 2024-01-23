@@ -54,7 +54,7 @@ function createBall(x, y) {
     color: "rgba(255, 255, 255, 1)"
   });
 
-  ball.target = player;
+  // ball.target = player;
   
   // ball.LightSource.mode = "difference";
 
@@ -155,9 +155,13 @@ Events.on("keydown", () => {
     SceneManager.Renderer.antiAliasing = !SceneManager.Renderer.antiAliasing;
   }
 });
-
+let c = null;
 Events.on("pointerdown", () => {
   if(Events.mouse.down && Events.mouse.buttons.has(0)){
-    createBall(Events.mouse.x, Events.mouse.y);
+    c = setInterval(() => createBall(Events.mouse.x, Events.mouse.y), 50);
   }
 });
+
+Events.on("pointerup", () => {
+  clearInterval(c);
+})

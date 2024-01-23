@@ -48,8 +48,9 @@ export default class SAT{
           const collisionInformation = this.getCollisionInformation(gameObjectA, gameObjectB);
 
           if(collisionInformation.collided){
-            const collision = new Collision({ gameObjectA, gameObjectB, ...collisionInformation });
-            console.log(collision);
+
+            const collision = new Collision({ gameObjectA, gameObjectB, ...collisionInformation }); // Create a collision object for later modification in the algorithm and for the event system.
+
             this.solveCollisions(collision);
           }
         }
@@ -61,9 +62,10 @@ export default class SAT{
     const { gameObjectA, gameObjectB } = collision;
     const thisType = gameObjectA.type;
     const otherType = gameObjectB.type;
-    
-    // Check if the current object has specific collision restrictions
 
+    /* ---- Filters start ---- */
+    
+    // Check if the object has specific collision restrictions
     if(gameObjectA.Collider.ignoredCollisions.has(otherType) || gameObjectA.Collider.ignoredCollisions.has(gameObjectB)){
       this.collisions.delete(collision.id);
       return;
@@ -74,13 +76,12 @@ export default class SAT{
       return;
     }
 
-    // If the current object can only collide with certain types of objects
+    // Check if the object can only collide with certain types of objects
     if(gameObjectA.collidesOnlyWith.size > 0 && !(gameObjectA.collidesOnlyWith.has(otherType) || gameObjectA.collidesOnlyWith.has(gameObjectB))){
       this.collisions.delete(collision.id);
       return;
     }
 
-    // Check if the other object has specific collision restrictions
     if(gameObjectB.collidesOnlyWith.size > 0 && !(gameObjectB.collidesOnlyWith.has(thisType) || gameObjectB.collidesOnlyWith.has(gameObjectA))){
       this.collisions.delete(collision.id);
       return;
@@ -97,16 +98,17 @@ export default class SAT{
       return;
     }
 
+    /* ---- Filters end ---- */
+
     gameObjectA.Collider.dispatch(collision);
     gameObjectB.Collider.dispatch(collision);
-    Events.emit("collision", collision);
+    Events.dispatch("collision", collision);
 
     this.separate(collision);
-    // this.applyForces(collision);
   }
 
   separate(collision){
-    const { gameObjectA, gameObjectB, penetration } = collision;
+    const { gameObjectA, gameObjectB, penetration, normal, tangent } = collision;
     const direction = penetration.copy;
 
     // Calculate the total inverse mass
@@ -127,40 +129,6 @@ export default class SAT{
     if(!gameObjectA.RigidBody.static) gameObjectA.position.add(separationVectorA);
     if(!gameObjectB.RigidBody.static) gameObjectB.position.add(separationVectorB);
   }
-
-  applyForces(collision) {
-    const { gameObjectA, gameObjectB, normal, tangent, overlap, penetration } = collision;
-
-    // Calculate the relative velocity
-    const relativeVelocity = gameObjectB.RigidBody.velocity.copy.sub(gameObjectA.RigidBody.velocity);
-
-    // Calculate the relative velocity in terms of the normal direction
-    const velocityAlongNormal = relativeVelocity.dot(normal);
-
-    // Do not resolve if velocities are separating
-    if(velocityAlongNormal > 0) return;
-
-    // Calculate the restitution
-    const e = Math.min(gameObjectA.RigidBody.restitution, gameObjectB.RigidBody.restitution);
-
-    // Calculate the impulse scalar
-    const j = -(1 + e) * velocityAlongNormal;
-    const invMassSum = gameObjectA.RigidBody.inverseMass + gameObjectB.RigidBody.inverseMass;
-    const impulseScalar = j / invMassSum;
-
-    // Apply impulse
-    const impulse = normal.copy.mult(impulseScalar);
-    gameObjectA.RigidBody.velocity.sub(impulse.copy.mult(gameObjectA.RigidBody.inverseMass));
-    gameObjectB.RigidBody.velocity.add(impulse.mult(gameObjectB.RigidBody.inverseMass));
-
-    // Friction
-    const frictionCoefficient = Math.min(gameObjectA.RigidBody.friction, gameObjectB.RigidBody.friction);
-
-    // Apply friction impulse
-    if(gameObjectA.RigidBody.inverseMass != 0) gameObjectA.RigidBody.applyFriction(frictionCoefficient);
-    if(gameObjectB.RigidBody.inverseMass != 0) gameObjectB.RigidBody.applyFriction(frictionCoefficient);
-  }
-
 
   getCollisionInformation(gameObjectA, gameObjectB) {
     if (gameObjectA === gameObjectB || gameObjectA.Collider.disableCollisions || gameObjectB.Collider.disableCollisions || !gameObjectA.Shape.isWithinBounds(gameObjectB.Shape.bounds, 1)) {
