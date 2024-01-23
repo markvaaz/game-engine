@@ -16,6 +16,7 @@ export default class RigidBody extends Component{
   centerOfMass = new Vector();
   lastFrame = 0;
   grounded = false;
+  inertia = 0;
 
   constructor(gameObject){
     super();
@@ -41,6 +42,7 @@ export default class RigidBody extends Component{
     this.area = shape.getArea();
     this.#mass = this.#density * this.area;
     this.#inverseMass = 1 / this.mass;
+    this.inertia = this.mass * this.centerOfMass.magnitudeSquared;
   }
 
   get mass(){

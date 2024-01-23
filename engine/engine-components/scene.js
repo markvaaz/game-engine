@@ -2,7 +2,6 @@ import Camera from "../objects/camera.js";
 import GameObject from "../objects/game-object.js";
 import Events from "./events.js";
 import Physics from "./physics.js";
-import SAT from "./sat.js";
 
 export default class Scene{
   // Define a static property "name" with the value 'Scene'
@@ -23,7 +22,7 @@ export default class Scene{
   // Create a new Physics object
   Physics = new Physics();
 
-  CollisionManager = new SAT({ cellSize: 64 });
+  CollisionManager = this.Physics.CollisionManager;
   
   // Create a new Camera object with the name "Main"
   Camera = new Camera("Main");
