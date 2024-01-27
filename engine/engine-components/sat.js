@@ -4,7 +4,7 @@ import Vector from "./vector.js";
 
 export default class SAT{
   GameObjects = new Map();
-  Collisions = new Map();
+  Collisions = new Set();
   SpatialHash = new DynamicSpatialHash(64);
   iterations = 1;
   collisionInformation = { collided: false, normal: new Vector(), overlap: Infinity, tangent: new Vector(), penetration: new Vector(), axis: new Vector(), center: new Vector() };
@@ -36,6 +36,7 @@ export default class SAT{
   }
 
   checkCollisions(){
+    this.Collisions.clear();
     for(let i = 0; i < this.iterations; i++){
       for(const gameObjectA of this.GameObjects.values()){
         this.updateHash(gameObjectA);
@@ -48,9 +49,9 @@ export default class SAT{
           const collisionInformation = this.getCollisionInformation(gameObjectA, gameObjectB);
 
           if(collisionInformation.collided){
-
             const collision = new Collision({ gameObjectA, gameObjectB, ...collisionInformation }); // Create a collision object for later modification in the algorithm and for the event system.
             
+            this.Collisions.add(`${gameObjectA.id}-${gameObjectB.id}`);
             this.solveCollision(collision);
           }
         }
@@ -154,15 +155,15 @@ export default class SAT{
     // it will loop 30 times instead of 50 (the some of the vertices length).
     // Although the number of calculations in this state is approximately the same,
     // it may be helpful (or not) depending on the changes.
-    const lenghtA = verticesA.length;
-    const lenghtB = verticesB.length;
-    const maxLength = Math.max(lenghtA, lenghtB);
+    const lengthA = verticesA.length;
+    const lengthB = verticesB.length;
+    const maxLength = Math.max(lengthA, lengthB);
 
     for(let i = 0; i < maxLength; i++){
-      if(i < lenghtA && !this.getMTV(verticesA, verticesB, i))
+      if(i < lengthA && !this.getMTV(verticesA, verticesB, i))
         return CI;
 
-      if(i < lenghtB && !this.getMTV(verticesB, verticesA, i))
+      if(i < lengthB && !this.getMTV(verticesB, verticesA, i))
         return CI;
     }
 
@@ -236,20 +237,20 @@ export default class SAT{
     let minB = Infinity;
     let maxB = -Infinity;
 
-    const lenghtA = verticesA.length;
-    const lenghtB = verticesB.length;
+    const lengthA = verticesA.length;
+    const lengthB = verticesB.length;
 
-    const maxLength = Math.max(lenghtA, lenghtB);
+    const maxLength = Math.max(lengthA, lengthB);
 
     // Loop through vertices to calculate projections and find minimum and maximum values
     for (let i = 0; i < maxLength; i++) {
-      if(i < lenghtA){
+      if(i < lengthA){
         const projection = axis.dot(verticesA[i]);
         minA = Math.min(minA, projection);
         maxA = Math.max(maxA, projection);
       }
 
-      if(i < lenghtB){
+      if(i < lengthB){
         const projection = axis.dot(verticesB[i]);
         minB = Math.min(minB, projection);
         maxB = Math.max(maxB, projection);
