@@ -17,7 +17,7 @@ export default class Shape extends Component{
   };
 
   #borderColor = 'rgba(255, 255, 255, 0)';
-  #color = `hsl(${Math.random() * 360} 100% 50% / 100%)`;
+  #color = `hsl(${Math.floor(Math.random() * 360)} 100% ${Math.floor(Math.random() * (80 - 40)) + 40}% / 100%)`;
   #borderWidth = 0;
   #opacity = 1;
   #darkZone = false;
