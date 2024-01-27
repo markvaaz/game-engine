@@ -15,6 +15,9 @@ const scene = engine.SceneManager.createScene('main');
 
 const { Renderer } = SceneManager;
 
+Runner.debug.enabled = true;
+Runner.debug.framesToAverage = 100;
+
 SceneManager.changeScene('main');
 // scene.globalLight.brightness = 0;
 
@@ -38,13 +41,7 @@ function createBall(x, y) {
 
   ball.add(LightSource, 200);
 
-  ball.add(Sprite, {
-    src: "/pixaria-logo.png",
-    position: new Vector(0, 0),
-    size: 120
-  })
-
-  ball.Sprite.direction = Math.random() > 0.5 ? 1 : -1;
+  // ball.Shape.color = "transparent"
 
   ball.Render.mode = "shape";
 
@@ -94,42 +91,47 @@ const centerX = innerWidth / 2;
 const centerY = innerHeight / 2;
 const wallWidth = 2000;
 const wallHeight = 400;
-const half = wallWidth / 2 + wallHeight / 2 + 200;
+const half = wallWidth / 2 + wallHeight / 2 - wallHeight;
 
 createWall(centerX - half, centerY, wallHeight, wallWidth);
 createWall(centerX + half, centerY, wallHeight, wallWidth);
 createWall(centerX, centerY - half, wallWidth, wallHeight);
 createWall(centerX, centerY + half, wallWidth, wallHeight);
 
-const tileSize = scene.CollisionManager.SpatialHash.cellSize;
-const size = 800;
-const startX = -size * 2;
-const startY = -size * 2;
-const endX = innerWidth + size * 2;
-const endY = innerHeight + size * 2;
+// const tileSize = scene.CollisionManager.SpatialHash.cellSize;
+// const size = 800;
+// const startX = -size * 2;
+// const startY = -size * 2;
+// const endX = innerWidth + size * 2;
+// const endY = innerHeight + size * 2;
 
-for (let x = startX; x < endX; x += tileSize) {
-  for (let y = startY; y < endY; y += tileSize) {
-    const rect = new GameObject();
+// for (let x = startX; x < endX; x += tileSize) {
+//   for (let y = startY; y < endY; y += tileSize) {
+//     const rect = new GameObject();
 
-    rect.layer = -1;
-    rect.updateMode = "render";
+//     rect.layer = -1;
+//     rect.updateMode = "render";
     
-    rect.position.set(x + tileSize/2, y + tileSize/2)
-    rect.size.set(tileSize);
-    rect.add(RectangleShape);
-    rect.Render.shape.color = "transparent";
-    rect.Render.shape.borderColor = "#666";
+//     rect.position.set(x + tileSize/2, y + tileSize/2)
+//     rect.size.set(tileSize);
+//     rect.add(RectangleShape);
+//     rect.Render.shape.color = "transparent";
+//     rect.Render.shape.borderColor = "#666";
 
-    rect.Render.mode = "shape";
+//     rect.Render.mode = "shape";
 
-    scene.add(rect);
-  }
-}
+//     scene.add(rect);
+//   }
+// }
 
 Runner.onUpdate(() => {
   document.getElementById('fps').innerText = `FPS: ${Runner.frameRate.toFixed(0)}`;
   document.getElementById('added-objects').innerText = `Objects in scene: ${scene.addedObjects}`;
+
+  if(Events.mouse.down && Events.mouse.buttons.has(0)){
+    const direction = new Vector(Math.random() * Math.PI * 2 - Math.PI, Math.random() * Math.PI * 2 - Math.PI);
+    createBall(Events.mouse.x + direction.x, Events.mouse.y + direction.y);
+  }
 });
 
 engine.setStyle();
@@ -155,13 +157,3 @@ Events.on("keydown", () => {
     SceneManager.Renderer.antiAliasing = !SceneManager.Renderer.antiAliasing;
   }
 });
-let c = null;
-Events.on("pointerdown", () => {
-  if(Events.mouse.down && Events.mouse.buttons.has(0)){
-    c = setInterval(() => createBall(Events.mouse.x, Events.mouse.y), 50);
-  }
-});
-
-Events.on("pointerup", () => {
-  clearInterval(c);
-})

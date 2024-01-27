@@ -1,3 +1,4 @@
+import Events from "./events.js";
 import Time from "./time.js";
 
 export default class Runner{
@@ -46,6 +47,22 @@ export default class Runner{
 
   // Average frames per second
   averageFPS = 0;
+
+  autoPause = true;
+
+  constructor(){
+    Events.on("blur", () => {
+      if(this.autoPause){
+        this.stop();
+      }
+    });
+
+    Events.on("focus", () => {
+      if(this.autoPause){
+        this.start();
+      }
+    })
+  }
 
   /**
    * Get the value of the debug property.
@@ -183,6 +200,10 @@ export default class Runner{
    * Main loop function that is called on each frame.
    */
   loop = () => {
+    if(this.autoPause && !document.hasFocus()){
+      this.stop();
+    }
+
     // Get the current time
     const now = performance.now();
 

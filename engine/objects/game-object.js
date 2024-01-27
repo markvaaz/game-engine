@@ -100,6 +100,7 @@ export default class GameObject {
 
     const component = new Component(this, ...args);
 
+    component.id = this.id;
     // Add the component to the parent game object using its name as a property
     this[component.name] = component;
 

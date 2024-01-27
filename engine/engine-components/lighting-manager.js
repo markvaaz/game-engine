@@ -355,6 +355,45 @@ export default class LightingManager{
     return { min: minIndex, max: maxIndex }
   }
 
+  // getVerticesFromExtremes(light, shadow) {
+  //   const left = {
+  //     x: light.position.x - shadow.position.x,
+  //     y: light.position.y - shadow.position.y
+  //   };
+  //   const right = {
+  //     x: left.x,
+  //     y: left.y
+  //   };
+  //   const workingVector = {
+  //     x: 0,
+  //     y: 0
+  //   };
+  //   let minIndex = -1;
+  //   let maxIndex = -1;
+
+  //   for (let i = 0; i < shadow.shape.length; i++) {
+  //     const vertex = shadow.shape[i];
+
+  //     workingVector.x = vertex.x + shadow.position.x - light.position.x;
+  //     workingVector.y = vertex.y + shadow.position.y - light.position.y;
+      
+  //     if(left.x * workingVector.y - left.y * workingVector.x < 0){
+  //       maxIndex = i;
+  //       left.x = -workingVector.x;
+  //       left.y = -workingVector.y;
+  //     }
+      
+  //     if(right.x * workingVector.y - right.y * workingVector.x > 0){
+  //       minIndex = i;
+  //       right.x = -workingVector.x;
+  //       right.y = -workingVector.y;
+  //     }
+  //     i++;
+  //   }
+
+  //   return { min: minIndex, max: maxIndex };
+  // }
+
   getGradient(light){
     let gradient = null;
     const { context } = this;
@@ -363,9 +402,9 @@ export default class LightingManager{
     const position = this.getCanvasPosition(light.position);
     const { angle, type } = light;
     
-    if(type === "spot"){
+    if(type === "radial"){
       gradient = context.createRadialGradient(position.x, position.y, radius, position.x, position.y, 0);
-    }else if (type === "cone"){
+    }else if (type === "spot"){
       const angleFix = Math.PI / 4;
       const direction = new Vector(distance).rotate(angle - angleFix).add(position);
         

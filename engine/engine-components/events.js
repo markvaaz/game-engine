@@ -31,11 +31,19 @@ class Events{
    * gameEvents.on("death", (event) => console.log("You died!"));
    * gameEvents.dispatch("death");
    */
-  static on(event, callback){
-    if(typeof callback !== "function") return console.error(`Expected a function, received ${typeof callback} instead`)
-    if(!Events.listeners.get(event)) Events.listeners.set(event, new Set());
+  static on(...args){
+    if(typeof args[args.length - 1] !== "function") throw new Error(`Expected a function, received ${typeof args[args.length - 1]} instead`)
 
-    Events.listeners.get(event).add(callback);
+    if(args.length === 2){
+      if(!Events.listeners.has(args[0])) Events.listeners.set(args[0], new Set());
+      Events.listeners.get(args[0]).add(args[1]);
+    }
+    else{
+      for(let i = 0; i < args.length - 1; i++){
+        if(i === args.length - 1) break;
+        Events.listeners.get(args[i]).add(args[args.length - 1]);
+      }
+    }
     
     return Events;
   }
@@ -51,10 +59,18 @@ class Events{
    * }
    * gameEvents.on("keydown", callback);
    */
-  static off(event, callback){
-    if(typeof callback !== "function") return;
+  static off(...args){
+    if(typeof args[args.length - 1] !== "function") throw new Error(`Expected a function, received ${typeof args[args.length - 1]} instead`);
     
-    if(Events.listeners.get(event)) Events.listeners.get(event).delete(callback);
+    if(args.length === 2){
+      if(Events.listeners.has(args[0])) Events.listeners.get(args[0]).delete(args[1]);
+    }
+    else{
+      for(let i = 0; i < args.length - 1; i++){
+        if(i === args.length - 1) break;
+        Events.listeners.get(args[i]).delete(args[args.length - 1]);
+      }
+    }
   }
 
   /**

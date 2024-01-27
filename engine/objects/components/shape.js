@@ -57,13 +57,13 @@ export default class Shape extends Component{
 
   set borderColor(color){
     this.#borderColor = color;
-    this.GameObject.Render.shape.lineColor = color;
+    this.GameObject.Render.shape.borderColor = color;
     this.GameObject.active = true;
   }
 
   set color(color){
     this.#color = color;
-    this.GameObject.Render.shape.fillColor = color;
+    this.GameObject.Render.shape.color = color;
     this.GameObject.active = true;
   }
 
@@ -292,17 +292,17 @@ export default class Shape extends Component{
   /**
    * Checks if the current bounds are within the given bounds.
    * @param {Object} bounds - The bounds to compare against.
-   * @param {number} [offset=0] - Optional offset value to expand or shrink the bounds.
+   * @param {number} [expansionAmount =0] - Optional expansionAmount value to expand or shrink the bounds.
    * @returns {boolean} - Returns true if the current bounds are within the given bounds, false otherwise.
    */
-  isWithinBounds = (bounds, offset = 0) => {
+  isWithinBounds = (bounds, expansionAmount = 0) => {
     // If bounds is falsy, return false
     if(!bounds) return false;
 
     // Check if the current bounds are within the given bounds
-    return this.bounds.min.x - offset < bounds.max.x && 
-           this.bounds.max.x + offset > bounds.min.x && 
-           this.bounds.min.y - offset < bounds.max.y && 
-           this.bounds.max.y + offset > bounds.min.y;
+    return this.bounds.min.x - expansionAmount < bounds.max.x && 
+           this.bounds.max.x + expansionAmount > bounds.min.x && 
+           this.bounds.min.y - expansionAmount < bounds.max.y && 
+           this.bounds.max.y + expansionAmount > bounds.min.y;
   }
 }

@@ -9,8 +9,8 @@ export default class Collider extends Component{
   // Define a static property 'name' and assign it the value "Collider"
   static name = "Collider";
 
-  // Define a variable 'disableCollisions' and assign it the value false
-  disableCollisions = false;
+  // Define a variable 'disabled' and assign it the value false
+  disabled = false;
 
   // Create a new empty set 'collisions'
   collisions = new Set();

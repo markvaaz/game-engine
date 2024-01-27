@@ -22,9 +22,9 @@ export default class Player extends GameObject{
     this.position.set(x, y);
     this.size.set(60, 100);
     this.layer = 1
-    this.add(LightSource, 150);
+    this.add(LightSource, 500);
     this.LightSource.enabled = false;
-    this.LightSource.type = "cone"; 
+    this.LightSource.type = "radial"; 
     // this.LightSource.angle = -Math.PI / 6.85;
     this.LightSource.distance = 0;
     this.LightSource.add([

@@ -10,7 +10,7 @@ export default class LightSource extends Component{
   #modes = [ "lighter", "source-in", "source-out", "source-over", "source-atop", "destination-over", "destination-in", "destination-out", "destination-atop", "copy", "xor", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "hard-light", "soft-light", "difference", "exclusion", "hue", "saturation", "color", "luminosity"];
 
   // Define an array of available types
-  #types = ["spot", "cone"];
+  #types = ["spot", "radial"];
 
   // Set the default blending mode to "lighter"
   #mode = "lighter";
@@ -24,8 +24,8 @@ export default class LightSource extends Component{
   // Set the default brightness to 1
   #brightness = 1;
 
-  // Set the default type to "spot"
-  #type = "spot";
+  // Set the default type to "radial"
+  #type = "radial";
 
   // Define an array of steps with their start value and color
   #steps = [
