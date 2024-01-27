@@ -81,7 +81,7 @@ function createWall(x, y, width, height, rotation = 0) {
   wall.Shadow.opacity = 1;
 
   // wall.Render.shape.darkZone = true;
-  wall.Render.shape.color = "#000";
+  // wall.Shape.color = "transparent";
 
   scene.add(wall);
   return wall;
@@ -130,7 +130,9 @@ Runner.onUpdate(() => {
 
   if(Events.mouse.down && Events.mouse.buttons.has(0)){
     const direction = new Vector(Math.random() * Math.PI * 2 - Math.PI, Math.random() * Math.PI * 2 - Math.PI);
-    createBall(Events.mouse.x + direction.x, Events.mouse.y + direction.y);
+    for(let i = 0; i < 10; i++){
+      createBall(Events.mouse.x + direction.x, Events.mouse.y + direction.y);
+    }
   }
 });
 
