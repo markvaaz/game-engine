@@ -48,6 +48,7 @@ export default class SAT{
           const collisionInformation = this.getCollisionInformation(gameObjectA, gameObjectB);
 
           if(collisionInformation.collided){
+
             const collision = new Collision({ gameObjectA, gameObjectB, ...collisionInformation }); // Create a collision object for later modification in the algorithm and for the event system.
             this.solveCollision(collision);
           }
