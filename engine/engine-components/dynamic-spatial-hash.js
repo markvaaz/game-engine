@@ -120,13 +120,13 @@ export default class DynamicSpatialHash{
 
     if(!hashes) hashes = this.getHashesFromObject(object);
 
-    const objects = [];
+    const objects = new Set();
 
     hashes.forEach(hash => {
       if(!this.#table.has(hash)) return;
       this.#table.get(hash).forEach(otherobject => {
         if(object === otherobject) return;
-       objects.push(otherobject);
+       objects.add(otherobject);
       });
     });
 
