@@ -48,7 +48,7 @@ export default class Ball extends Polygon{
       this.RigidBody.velocity.set(movement.x, movement.y);
     }
 
-    this.rotation += Time.deltaTime * 0.5;
+    // this.rotation += Time.deltaTime * 0.5;
 
     // this.randomMovement(Time);
   }
