@@ -14,7 +14,6 @@ body{
   z-index: 2;
   font-size: 2em;
   font-weight: bold;
-  /* background: #990000; */
   padding: 5px;
   color: #fff;
   display: flex;
@@ -22,7 +21,6 @@ body{
   justify-content: center;
   border-radius: 6px;
   pointer-events: none;
-  /* display: none; */
 }
 
 #added-objects{
@@ -81,22 +79,20 @@ body{
   position: absolute;
   pointer-events: none;
   transform: translate(-50%, -50%);
+  z-index: 10000;
 }
 
 #engine-cursor:after{
-  content: "";
+  content: "➤";
   translate: -35% -20%;
   rotate: -120deg;
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  background-color: white;
   font-size: 1.5em;
   color: #fff;
-  text-shadow: -5px 3px 5px rgba(0, 0, 0, 0.3);
+  /* create a text border */
+  text-shadow:-5px 0px 4px rgba(0, 0, 0, 0.3), -1px 0px 0px #000, 1px 0px 0px #000, 0px -1px 0px #000, 0px 1px 0px #000;
 }
 
 @keyframes fade-out {

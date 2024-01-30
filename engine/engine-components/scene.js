@@ -9,6 +9,8 @@ export default class Scene{
   
   // Define an instance property "name" with the value 'Scene'
   name = 'Scene';
+
+  #deleteAll = false;
   
   // Create a new Map object to store game objects
   GameObjects = new Map();
@@ -117,11 +119,15 @@ export default class Scene{
 
     gameObject.Scene = null;
 
+    gameObject.destroy();
+
     this.GameObjects.delete(gameObject.id);
 
     this.Renderer.delete(gameObject);
 
     this.CollisionManager.delete(gameObject);
+
+    this.queueToRender.delete(gameObject.id);
 
     if(gameObject.children.size > 0){
       gameObject.children.forEach(child => {
@@ -129,6 +135,12 @@ export default class Scene{
         this.delete(child);
       });
     }
+  }
+
+  deleteAll(){
+    this.GameObjects.forEach(gameObject => {
+      this.delete(gameObject);
+    });
   }
 
   /**

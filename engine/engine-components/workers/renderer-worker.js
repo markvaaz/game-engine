@@ -4,7 +4,6 @@ import LightingManager from "../lighting-manager.js";
 class RendererWorker{
   frameCount = -1;
   layers = new Map();
-  gameObjects = new Map();
   camera = null;
   antiAliasing = false;
   LightingManager = new LightingManager(this);
@@ -82,11 +81,15 @@ class RendererWorker{
   }
 
   delete({ gameObject }){
-    if(!this.layers.has(gameObject.layer)) return;
+    const { layer, id } = gameObject;
 
-    this.layers.get(gameObject.layer).delete(gameObject.id);
+    this.LightingManager.delete(id);
 
-    if(this.layers.get(gameObject.layer).size === 0) this.layers.delete(gameObject.layer);
+    if(!this.layers.has(layer)) return; 
+
+    this.layers.get(layer).delete(id);
+
+    if(this.layers.get(layer).size === 0) this.layers.delete(layer);
   }
 
   update({ gameObjects }){
@@ -116,7 +119,6 @@ class RendererWorker{
 
   setLayer(gameObject) {
     const { layer, id, lightSource, shadow } = gameObject;
-    const darkZone = gameObject.shape?.darkZone;
     let layerAdded = false;
 
     // Add the layer if it doesn't exist
@@ -132,7 +134,7 @@ class RendererWorker{
       }
     }
 
-    if(!darkZone){
+    if(!gameObject.shape?.darkZone){
       const currentLayer = this.layers.get(layer);
       this.LightingManager.darkZones.delete(id);
       

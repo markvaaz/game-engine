@@ -8,6 +8,10 @@ import LightSource from "./engine/objects/components/light-source.js";
 import Shadow from "./engine/objects/components/shadow.js";
 import Sprite from "./engine/objects/components/sprite.js";
 import Collider from "./engine/objects/components/collider.js";
+import Button from "./engine/ui-elements/button.js";
+const { ipcRenderer } = require("electron");
+
+console.log(ipcRenderer)
 
 const engine = new Engine();
 const { SceneManager, Runner, Events, Vector, Time } = engine;
@@ -30,8 +34,8 @@ map.size.set(2000);
 
 scene.add(player);
 
-const numBalls = 1;
-const spawnArea = 10;
+const numBalls = 0;
+const spawnArea = 0;
 const balls = [];
 
 function createBall(x, y) {
@@ -96,33 +100,33 @@ for(let i = 0; i < 15; i++) {
 // createWall(centerX, centerY - half, wallWidth, wallHeight);
 // createWall(centerX, centerY + half, wallWidth, wallHeight);
 
-const tileSize = scene.CollisionManager.SpatialHash.cellSize;
-const size = 800;
-const startX = -size * 2;
-const startY = -size * 2;
-const endX = innerWidth + size * 2;
-const endY = innerHeight + size * 2;
+// const tileSize = scene.CollisionManager.SpatialHash.cellSize;
+// const size = 800;
+// const startX = -size * 2;
+// const startY = -size * 2;
+// const endX = innerWidth + size * 2;
+// const endY = innerHeight + size * 2;
 
-for (let x = startX; x < endX; x += tileSize) {
-  for (let y = startY; y < endY; y += tileSize) {
-    const rect = new GameObject();
+// for (let x = startX; x < endX; x += tileSize) {
+//   for (let y = startY; y < endY; y += tileSize) {
+//     const rect = new GameObject();
 
-    rect.layer = -1;
-    rect.updateMode = "render";
+//     rect.layer = -1;
+//     rect.updateMode = "render";
     
-    rect.position.set(x + tileSize/2, y + tileSize/2)
-    rect.size.set(tileSize);
-    rect.add(RectangleShape);
-    rect.Render.shape.color = "transparent";
-    rect.Render.shape.borderColor = "#666";
+//     rect.position.set(x + tileSize/2, y + tileSize/2)
+//     rect.size.set(tileSize);
+//     rect.add(RectangleShape);
+//     rect.Render.shape.color = "transparent";
+//     rect.Render.shape.borderColor = "#666";
 
-    // rect.add(Shadow);
+//     // rect.add(Shadow);
 
-    rect.Render.mode = "shape";
+//     rect.Render.mode = "shape";
 
-    scene.add(rect);
-  }
-}
+//     scene.add(rect);
+//   }
+// }
 
 Runner.onUpdate(() => {
   document.getElementById('fps').innerText = `FPS: ${Runner.frameRate.toFixed(0)}`;
@@ -159,3 +163,10 @@ Events.on("keydown", () => {
     // SceneManager.Renderer.antiAliasing = !SceneManager.Renderer.antiAliasing;
   }
 });
+
+const button = new Button({ text:"Nuke" });
+button.position.set(10, 10);
+
+button.on("click", () => {
+  scene.deleteAll();
+})

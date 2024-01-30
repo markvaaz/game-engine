@@ -351,6 +351,7 @@ export default class Camera extends GameObject{
    * Updates the position of the object based on its target.
    */
   updateFollow() {
+    if(this.target?.destroyed) this.target = null;
     // If there is no target or the mouse is being clicked, do nothing
     if (this.target === null && this.temporaryTarget === null || Events.windowMouse.down) {
       return;

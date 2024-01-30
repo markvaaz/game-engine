@@ -23,6 +23,12 @@ export default class LightingManager{
     return this.Renderer.context;
   }
 
+  delete(id){
+    this.lights.delete(id);
+    this.shadows.delete(id);
+    this.darkZones.delete(id);
+  }
+
   clear(context = this.context){
     context.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }

@@ -71,7 +71,7 @@ export default class Renderer {
    * @param {GameObject} gameObject - The game object to be deleted.
    */
   delete(gameObject) {
-    this.worker.postMessage({ action: "delete", object: gameObject.Render });
+    this.worker.postMessage({ action: "delete", gameObject: gameObject.Render });
   }
 
   /**
