@@ -145,41 +145,31 @@ export default class GameObject {
     this.destroyed = true;
   }
 
-  /**
-   * Execute the 'beforeUpdate' method on each component in the 'components' array if it exists.
-   *
-   * @param {Time} Time - the time parameter to be passed to the 'beforeUpdate' method of each component
-   */
-  defaultBeforeUpdate(Time){
+  defaultBeforeUpdate(){
     this.components.forEach(component => {
       if(this.destroyed) return;
-      component.beforeUpdate?.(Time);
+      component.beforeUpdate?.();
     }); 
   }
 
   /**
    * Updates all components in the list with the given time.
-   *
-   * @param {type} Time - the time to update the components with
    */
-  defaultUpdate(Time){
+  defaultUpdate(){
     this.components.forEach(component => {
       if(this.destroyed) return;
-      component.update?.(Time);
+      component.update?.();
     });
   }
 
   /**
    * Calls the afterUpdate method on all the components in the component list
    * and updates the position of all the children based on the parent's position.
-   *
-   * @param {Time} Time - The time object used for updating components.
-   * @return {void} This function does not return a value.
    */
-  defaultAfterUpdate(Time){
+  defaultAfterUpdate(){
     this.components.forEach(component => {
       if(this.destroyed) return;
-      component.afterUpdate?.(Time);
+      component.afterUpdate?.();
     });
 
     if(this.children.size === 0) return;

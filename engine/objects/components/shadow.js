@@ -27,8 +27,8 @@ export default class Shadow extends Component{
       position: this.#position
     };
 
-    if(this.GameObject.Shape && this.GameObject.Shape.edges.length > 0) {
-      this.add(this.GameObject.Shape.edges, true);
+    if(this.GameObject.Shape && this.GameObject.Shape.rotatedVertices.length > 0) {
+      this.add(this.GameObject.Shape.rotatedVertices, true);
     }
 
     this.GameObject.position.onChange(() => {

@@ -4,10 +4,9 @@ import Component from "./component.js";
 export default class Shape extends Component{
   static name = 'Shape';
   name = 'Shape';
-  staticEdges = [];
-  edges = [];
+  staticVertices = [];
+  rotatedVertices = [];
   vertices = [];
-  normalAxes = [];
   #type = 'polygon';
   #added = false;
   #centerOfMass = null;
@@ -105,12 +104,12 @@ export default class Shape extends Component{
     // Initialize the area variable
     let area = 0;
     // Set the last vertex index
-    let j = this.edges.length - 1;
+    let j = this.staticVertices.length - 1;
     
     // Iterate over each vertex of the polygon
-    for(let i = 0; i < this.edges.length; i++){
+    for(let i = 0; i < this.staticVertices.length; i++){
       // Calculate the area using the Shoelace formula
-      area += (this.edges[j].x + this.edges[i].x) * (this.edges[j].y - this.edges[i].y);
+      area += (this.staticVertices[j].x + this.staticVertices[i].x) * (this.staticVertices[j].y - this.staticVertices[i].y);
       // Update the last vertex index
       j = i;
     }
@@ -149,9 +148,9 @@ export default class Shape extends Component{
   addVertices = (vertices, reset = false) => {
     // Reset the shape if specified
     if(reset){
-      this.staticEdges = [];
+      this.staticVertices = [];
       this.vertices = [];
-      this.edges = [];
+      this.rotatedVertices = [];
     }
 
     // Add vertices to the render object
@@ -163,7 +162,7 @@ export default class Shape extends Component{
       if(!(vertex instanceof Vector)) return;
 
       // Add the vertex to the edges array
-      this.staticEdges.push(vertex.copy.lock());
+      this.staticVertices.push(vertex.copy.lock());
 
       // Add the vertex to the shape
       this.addVertex(vertex);
@@ -197,7 +196,7 @@ export default class Shape extends Component{
     
     vertex.rotate(this.GameObject.rotation);
     vertex.subtract(this.GameObject.Transform.anchor);
-    this.edges.push(vertex.copy);
+    this.rotatedVertices.push(vertex.copy);
     vertex.add(this.GameObject.position);
 
     this.vertices.push(vertex);
@@ -211,7 +210,7 @@ export default class Shape extends Component{
     if (!this.#added || !this.GameObject.active) return;
 
     this.vertices = [];
-    this.edges = [];
+    this.rotatedVertices = [];
 
     // Initialize the minimum and maximum coordinates
     let minX = Number.POSITIVE_INFINITY;
@@ -220,8 +219,8 @@ export default class Shape extends Component{
     let maxY = Number.NEGATIVE_INFINITY;
 
     // Iterate over the edges and process each vertex
-    for (let i = 0; i < this.staticEdges.length; i++) {
-      const vertex = new Vector(this.staticEdges[i]);
+    for (let i = 0; i < this.staticVertices.length; i++) {
+      const vertex = new Vector(this.staticVertices[i]);
 
       // Rotate the vertex based on the object's rotation
       vertex.rotate(this.GameObject.rotation);
@@ -229,7 +228,7 @@ export default class Shape extends Component{
       // Subtract the object's anchor from the vertex
       vertex.subtract(this.GameObject.anchor);
       
-      this.edges.push(vertex.copy);
+      this.rotatedVertices.push(vertex.copy);
 
       // Add the object's position to the vertex
       vertex.add(this.GameObject.position);
@@ -249,14 +248,14 @@ export default class Shape extends Component{
     this.#bounds.max.set(maxX, maxY);
 
     if(this.GameObject.Transform.previousRotation !== this.GameObject.rotation){
-      this.GameObject.Render.addVertices(this.edges);
+      this.GameObject.Render.addVertices(this.rotatedVertices);
     }
 
     // Update the bounds of the object's renderer
     this.GameObject.Render.updateBounds(this.#bounds);
 
     if(this.GameObject.Shadow && !this.GameObject.Shadow.added){
-      this.GameObject.Shadow.add(this.edges, true);
+      this.GameObject.Shadow.add(this.rotatedVertices, true);
     }
   }
 
@@ -275,7 +274,7 @@ export default class Shape extends Component{
     let y = 0;
 
     // Calculate the sum of the x and y coordinates of all vertices.
-    for (let vertex of this.staticEdges) {
+    for (let vertex of this.staticVertices) {
       x += vertex.x;
       y += vertex.y;
     }

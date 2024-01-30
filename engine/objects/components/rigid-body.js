@@ -109,7 +109,7 @@ export default class RigidBody extends Component{
     this.velocity.multiply(1 - friction);
   }
 
-  update = (Time) => {
+  update = () => {
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.maxSpeed);
     this.GameObject.position.add(this.velocity.copy);

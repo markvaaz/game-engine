@@ -37,24 +37,26 @@ export default class SAT{
 
   checkCollisions(){
     this.Collisions.clear();
-    for(let i = 0; i < this.iterations; i++){
-      for(const gameObjectA of this.GameObjects.values()){
-        this.updateHash(gameObjectA);
-        if(!gameObjectA.Collider || gameObjectA.Collider.disabled || !gameObjectA.active) continue;
-        const query = this.SpatialHash.query(gameObjectA);
 
-        for(const gameObjectB of query){
-          if(this.Collisions.has(`${gameObjectA.id}-${gameObjectB.id}`) || this.Collisions.has(`${gameObjectB.id}-${gameObjectA.id}`)) continue;
+    for(let i = 0; i < this.iterations; i++) // There is no need for curly brackets here :D
+    
+    for(const gameObjectA of this.GameObjects.values()){
+      this.updateHash(gameObjectA);
+      if(!gameObjectA.Collider || !gameObjectA.Collider.enabled || !gameObjectA.active) continue;
+      const query = this.SpatialHash.query(gameObjectA);
 
-          const collisionInformation = this.getCollisionInformation(gameObjectA, gameObjectB);
+      for(const gameObjectB of query){
+        if(this.Collisions.has(`${gameObjectA.id}-${gameObjectB.id}`) || this.Collisions.has(`${gameObjectB.id}-${gameObjectA.id}`)) continue;
 
-          if(collisionInformation.collided){
-            const collision = new Collision({ gameObjectA, gameObjectB, ...collisionInformation }); // Create a collision object for later modification in the algorithm and for the event system.
-            
-            this.Collisions.add(`${gameObjectA.id}-${gameObjectB.id}`);
-            this.solveCollision(collision);
-          }
-        }
+        const collisionInformation = this.getCollisionInformation(gameObjectA, gameObjectB);
+
+        if(!collisionInformation.collided) continue;
+
+        const collision = new Collision({ gameObjectA, gameObjectB, ...collisionInformation }); // Create a collision object for later modification in the algorithm and for the event system.
+        
+        this.Collisions.add(`${gameObjectA.id}-${gameObjectB.id}`);
+        this.solveCollision(collision);
+        
       }
     }
   }
@@ -136,8 +138,8 @@ export default class SAT{
   getCollisionInformation(gameObjectA, gameObjectB) {
     if(
       gameObjectA === gameObjectB ||
-      gameObjectA.Collider.disabled ||
-      gameObjectB.Collider.disabled ||
+      !gameObjectA.Collider.enabled ||
+      !gameObjectB.Collider.enabled ||
       // AABB collision check to avoid unnecessary calculations
       !gameObjectA.Shape.isWithinBounds(gameObjectB.Shape.bounds, 1)
     ) return { collided: false };
@@ -160,11 +162,8 @@ export default class SAT{
     const maxLength = Math.max(lengthA, lengthB);
 
     for(let i = 0; i < maxLength; i++){
-      if(i < lengthA && !this.getMTV(verticesA, verticesB, i))
-        return CI;
-
-      if(i < lengthB && !this.getMTV(verticesB, verticesA, i))
-        return CI;
+      if(i < lengthA && !this.getMTV(verticesA, verticesB, i)) return CI;
+      if(i < lengthB && !this.getMTV(verticesB, verticesA, i)) return CI;
     }
 
     // Calculate the relative position vector 'center' from the center of gameObjectA to gameObjectB,
