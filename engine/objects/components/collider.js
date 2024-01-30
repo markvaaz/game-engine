@@ -1,4 +1,3 @@
-import Vector from "../../engine-components/vector.js";
 import Component from "./component.js";
 import RigidBody from "./rigid-body.js";
 
@@ -9,17 +8,13 @@ export default class Collider extends Component{
   // Define a static property 'name' and assign it the value "Collider"
   static name = "Collider";
 
-  // Define a variable 'disableCollisions' and assign it the value false
-  disableCollisions = false;
-
   // Create a new empty set 'collisions'
   collisions = new Set();
 
   // Define a variable 'trigger' and assign it the value false
   trigger = false;
 
-  // Create a new empty set 'nearByObjects'
-  nearByObjects = new Set();
+  enabled = true;
 
   // Create a new empty map 'collisionCallbacks'
   #collisionCallbacks = new Map();

@@ -1,3 +1,4 @@
+import Events from "./events.js";
 import Time from "./time.js";
 
 export default class Runner{
@@ -38,14 +39,27 @@ export default class Runner{
   // Whether the instance is running or not
   running = false;
 
-  // Instance of the Time class
-  Time = new Time();
-
   // Request Animation Frame ID
   RAF = null;
 
   // Average frames per second
   averageFPS = 0;
+
+  autoPause = true;
+
+  constructor(){
+    Events.on("blur", () => {
+      if(this.autoPause){
+        this.stop();
+      }
+    });
+
+    Events.on("focus", () => {
+      if(this.autoPause){
+        this.start();
+      }
+    })
+  }
 
   /**
    * Get the value of the debug property.
@@ -75,7 +89,7 @@ export default class Runner{
    * @return {number} The frame rate.
    */
   get frameRate(){
-    return this.Time.frameRate;
+    return Time.frameRate;
   }
 
   /**
@@ -103,7 +117,7 @@ export default class Runner{
    * @return {number} The frame count.
    */
   get frameCount(){
-    return this.Time.frameCount;
+    return Time.frameCount;
   }
 
   /**
@@ -183,11 +197,15 @@ export default class Runner{
    * Main loop function that is called on each frame.
    */
   loop = () => {
+    if(this.autoPause && !document.hasFocus()){
+      this.stop();
+    }
+
     // Get the current time
     const now = performance.now();
 
     // Calculate the elapsed time since the last frame
-    const elapsedTimeMS = now - this.Time.lastFrameTime;
+    const elapsedTimeMS = now - Time.lastFrameTime;
 
     // Calculate the target time for each frame based on the desired frame rate
     const targetTimeMS = 1000.0 / this.#frameRateLimit;
@@ -198,23 +216,23 @@ export default class Runner{
     // Check if the elapsed time meets the target time with tolerance
     if (elapsedTimeMS >= targetTimeMS - toleranceMS){
       // Update the time object with the current time
-      this.Time.update(now);
+      Time.update(now);
 
       // Call the before update callbacks
-      for(const callback of this.#beforeUpdateCallbacks.values()) callback(this.Time);
+      for(const callback of this.#beforeUpdateCallbacks.values()) callback();
 
       // Call the update callbacks
-      for(const callback of this.#updateCallbacks.values()) callback(this.Time);
+      for(const callback of this.#updateCallbacks.values()) callback();
 
       // Call the after update callbacks
-      for(const callback of this.#afterUpdateCallbacks.values()) callback(this.Time);
+      for(const callback of this.#afterUpdateCallbacks.values()) callback();
 
       // Calculate the average FPS
-      this.#totalFPS += this.Time.frameRate;
+      this.#totalFPS += Time.frameRate;
       this.#numFrames++;
 
       // Check if debug mode is enabled and it's time to display the average FPS
-      if(this.debug.enabled && this.Time.frameCount > this.#lastFrameTime + this.debug.framesToAverage){
+      if(this.debug.enabled && Time.frameCount > this.#lastFrameTime + this.debug.framesToAverage){
         // Calculate the average FPS
         this.averageFPS = this.#totalFPS / this.#numFrames;
 
@@ -230,7 +248,7 @@ export default class Runner{
         this.#numFrames = 0;
 
         // Update the last frame time
-        this.#lastFrameTime = this.Time.frameCount;
+        this.#lastFrameTime = Time.frameCount;
       }
     }
 
@@ -244,10 +262,10 @@ export default class Runner{
    */
   start = () => {
     this.running = true;
-    this.Time.lastFrameTime = performance.now();
+    Time.lastFrameTime = performance.now();
 
     this.#onSetupCallbacks.forEach((callback, id) => {
-      callback(this.Time);
+      callback();
       this.#onSetupCallbacks.delete(id);
     });
 

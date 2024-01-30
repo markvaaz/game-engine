@@ -4,11 +4,12 @@ import CapsuleShape from "../engine/objects/components/shapes/capsule-shape.js";
 import Collider from "../engine/objects/components/collider.js";
 import Vector from "../engine/engine-components/vector.js";
 import LightSource from "../engine/objects/components/light-source.js";
-import AnimatedSprite from "../engine/objects/components/animated-sprite.js";
+import AnimatedSprite from "../engine/objects/components/animated-sprite-sheet.js";
 import Sprite from "../engine/objects/components/sprite.js";
 import EllipseShape from "../engine/objects/components/shapes/ellipse-shape.js";
 import RectangleShape from "../engine/objects/components/shapes/rectangle-shape.js";
-
+import Shadow from "../engine/objects/components/shadow.js";
+import Time from "../engine/engine-components/time.js";
 
 export default class Player extends GameObject{
   name = "Player";
@@ -16,36 +17,24 @@ export default class Player extends GameObject{
 
   constructor(x, y){
     super();
+    this.position.set(x, y);
     this.add(CapsuleShape);
     this.add(Collider);
     this.debug = true;
-    this.position.set(x, y);
-    this.size.set(60, 100);
+    this.size.set(60, 80);
     this.layer = 1
-    this.add(LightSource, 150);
+    this.add(LightSource, 200);
+    // this.add(Shadow);
     this.LightSource.enabled = false;
-    this.LightSource.type = "cone"; 
-    // this.LightSource.angle = -Math.PI / 6.85;
-    this.LightSource.distance = 0;
+    this.LightSource.type = "spot"; 
     this.LightSource.add([
-      { start: 0, color: "rgba(255, 100, 255, 1)" },
-      { start: 1, color: "rgba(255, 100, 255, 0.02)" },
+      { start: 0, color: "#fff" },
+      { start: 1, color: "transparent" }
     ]);
+    this.LightSource.brightness = 1;
+    // this.LightSource.mode = "soft-light";
 
-    // this.rotation = Math.PI / 2;
-
-    // this.add(AnimatedSprite, {
-    //   srcs: ["/game-assets/swordman/swordman.png"],
-    //   position: new Vector(0, 0),
-    //   size: new Vector(64, 64),
-    //   frameRate: 8,
-    //   type: "sheet",
-    //   scale: new Vector(3),
-    //   anchor: new Vector(0.05, -0.05),
-    //   debug: true
-    // });
-
-    // this.Render.mode = "sprite";
+    this.Render.mode = "sprite";
 
     let holding = false;
 
@@ -59,30 +48,68 @@ export default class Player extends GameObject{
     Events.on("keyup", () => holding = false);
   }
 
-  move(Time){
-    const speed = 600;
+  setup(){
+    this.add(AnimatedSprite, {
+      src: "/game-assets/swordman/swordman.png",
+      cellSize: new Vector(64, 64),
+      frameRate: 8,
+      rowIndex: 0,
+      name: "idle",
+      collumns: 6,
+      scale: new Vector(3),
+      anchor: new Vector(0.05, -0.05),
+      debug: true
+    });
+
+    this.AnimatedSprite.copy("idle", { name: "walk", rowIndex: 1 });
+    this.AnimatedSprite.copy("idle", { name: "attack", rowIndex: 3, fallback: "idle", once: true, skipFrames: [0,1] });
+  }
+
+  move(){
+    const speed = 300;
     let forceX = 0;
     let forceY = 0;
 
-    if(Events.keys.has("w") || Events.keys.has("W") || Events.keys.has("ArrowUp")) forceY -= 1;
-    if(Events.keys.has("a") || Events.keys.has("A") || Events.keys.has("ArrowLeft") || Events.windowMouse.deltaX < 0) forceX -= 1;
-    if(Events.keys.has("s") || Events.keys.has("S") || Events.keys.has("ArrowDown")) forceY += 1;
-    if(Events.keys.has("d") || Events.keys.has("D") || Events.keys.has("ArrowRight") || Events.windowMouse.deltaX > 0) forceX += 1;
+    if(Events.keys.has("KeyW") || Events.keys.has("ArrowUp")) forceY -= 1;
+    if(Events.keys.has("KeyA") || Events.keys.has("ArrowLeft")) forceX -= 1;
+    if(Events.keys.has("KeyD") || Events.keys.has("ArrowRight")) forceX += 1;
+    if(Events.keys.has("KeyS") || Events.keys.has("ArrowDown")) forceY += 1;
 
     const force = new Vector(forceX * speed, forceY * speed);
 
     this.position.add(force.multiply(Time.deltaTime));
   }
 
-  update(Time){
-    this.move(Time);
-    const maxDistance = 400;
+  update(){
+    this.move();
+    this.attack();
+    const maxDistance = 800;
 
     // this.LightSource.steps[0].color = `hsl(${Time.frameCount % 360} 100% 50% / 100%)`;
     this.LightSource.angle = this.position.angleBetween(Events.mouse.position);
     this.LightSource.distance = Math.min(maxDistance, this.position.distance(Events.mouse.position));
     // this.active = true;
 
-    // this.rotation += Time.deltaTime * 0.5;
+    // this.LightSource.brightness = Math.sin(Time.frameCount / 100) * 0.5 + 0.5;
+
+    this.setCurrentAnimation();
+  }
+
+  setCurrentAnimation(){
+    if(this.Transform.velocity.magnitude > 2){
+      this.AnimatedSprite.set("walk");
+    } else { 
+      this.AnimatedSprite.set("idle");
+    }
+
+    if(Events.keys.has("KeyA") || Events.keys.has("ArrowLeft")) this.AnimatedSprite.facing = "left";
+    if(Events.keys.has("KeyD") || Events.keys.has("ArrowRight")) this.AnimatedSprite.facing = "right";
+  }
+
+  attack(){
+    if(!Events.keys.has("Space")) return;
+    this.AnimatedSprite.set("attack");
+    if(Events.keys.has("KeyA") || Events.keys.has("ArrowLeft")) this.AnimatedSprite.facing = "left";
+    if(Events.keys.has("KeyD") || Events.keys.has("ArrowRight")) this.AnimatedSprite.facing = "right";
   }
 }

@@ -23,6 +23,10 @@ export default class LightingManager{
     return this.Renderer.context;
   }
 
+  clear(context = this.context){
+    context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
   getCanvasPosition(x, y) {
     if(typeof x === 'object' && !isNaN(x.x) && !isNaN(x.y))
       return this.getCanvasPosition(x.x, x.y);
@@ -33,8 +37,8 @@ export default class LightingManager{
   renderLights() {
     const { canvas, context, cacheContext: lightCacheContext } = this;
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    lightCacheContext.clearRect(0, 0, canvas.width, canvas.height);
+    this.clear();
+    this.clear(lightCacheContext);
 
     for (const light of this.lights.values()) {
       if (!light.visible || !light.enabled) continue;
@@ -42,7 +46,7 @@ export default class LightingManager{
       this.renderLight(light);
       this.draw(1, light.mode);
   
-      context.clearRect(0, 0, canvas.width, canvas.height);
+      this.clear();
     }
 
     this.renderDarkZones();
@@ -82,7 +86,7 @@ export default class LightingManager{
     cacheContext.drawImage(this.canvas, 0, 0);
   }
 
-  renderLight(light) {
+  renderLight(light, noShadow = false) {
     const { context } = this;
     const gradient = this.getGradient(light);
 
@@ -91,29 +95,85 @@ export default class LightingManager{
     context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     for(const shadow of this.shadows.values()){
-      if(!shadow.visible) continue;
-      const shadowBounds = {
-        min: { x: shadow.position.x + shadow.bounds.min.x, y: shadow.position.y + shadow.bounds.min.y },
-        max: { x: shadow.position.x + shadow.bounds.max.x, y: shadow.position.y + shadow.bounds.max.y }
-      };
-      const lightBounds = {
-        min: { x: light.position.x - (light.radius * 2) - light.distance, y: light.position.y - (light.radius * 2) - light.distance, },
-        max: { x: light.position.x + (light.radius * 2) + light.distance, y: light.position.y + (light.radius * 2) + light.distance, }
-      };
+      if(!shadow.visible || shadow.id === light.id) continue;
       
-      const isWithinXBounds = shadowBounds.max.x >= lightBounds.min.x && shadowBounds.min.x <= lightBounds.max.x;
-      const isWithinYBounds = shadowBounds.max.y >= lightBounds.min.y && shadowBounds.min.y <= lightBounds.max.y;
+      if(this.isIntersecting(light, shadow)){
+        continue;
+      }
 
-      if(!(isWithinXBounds && isWithinYBounds)) continue;
+      if(this.isInside(light, shadow)){
+        this.renderShadowRect(shadow);
+        continue;
+      }
       
-      this.renderShadow(light, shadow);
+      if(!noShadow) this.renderShadow(light, shadow);
     }
+  }
+
+  renderShadowRect(shadow){
+    const { context } = this;
+    context.globalCompositeOperation = "destination-out";
+    context.fillStyle = "black";
+    context.globalAlpha = shadow.opacity;
+    context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    context.globalCompositeOperation = "source-over";
+  }
+
+  isIntersecting(light, shadow) {
+    const shadowBounds = {
+      min: { x: shadow.position.x + shadow.bounds.min.x, y: shadow.position.y + shadow.bounds.min.y },
+      max: { x: shadow.position.x + shadow.bounds.max.x, y: shadow.position.y + shadow.bounds.max.y }
+    };
+    const lightBounds = {
+      min: { x: light.position.x + light.bounds.min.x, y: light.position.y + light.bounds.min.y },
+      max: { x: light.position.x + light.bounds.max.x, y: light.position.y + light.bounds.max.y }
+    }
+    // Check if the shadow is within the light bounds
+    return !(shadowBounds.max.x >= lightBounds.min.x && shadowBounds.min.x <= lightBounds.max.x && shadowBounds.max.y >= lightBounds.min.y && shadowBounds.min.y <= lightBounds.max.y)
+  }
+
+  renderBounds(bounds){
+    const { rendererContext } = this;
+
+    rendererContext.strokeStyle = "red";
+
+    rendererContext.beginPath();
+    rendererContext.moveTo(bounds.min.x, bounds.min.y);
+    rendererContext.lineTo(bounds.min.x, bounds.max.y);
+    rendererContext.lineTo(bounds.max.x, bounds.max.y);
+    rendererContext.lineTo(bounds.max.x, bounds.min.y);
+    rendererContext.closePath();
+    rendererContext.stroke();
+  }
+
+  isInside(light, shadow){
+    // Check if the light position is inside the shadow vertices
+    const position = light.position;
+    const shadowBounds = {
+      min: { x: shadow.position.x + shadow.bounds.min.x, y: shadow.position.y + shadow.bounds.min.y },
+      max: { x: shadow.position.x + shadow.bounds.max.x, y: shadow.position.y + shadow.bounds.max.y }
+    }
+    let inside = false;
+
+    // Check if the light is inside the shadow bounds first, to save processing
+    if(position.x >= shadowBounds.min.x && position.x <= shadowBounds.max.x && position.y >= shadowBounds.min.y && position.y <= shadowBounds.max.y){
+      // Check if the light is inside the shadow shape
+      for (let i = 0, j = shadow.shape.length - 1; i < shadow.shape.length; j = i++) {
+        const xi = shadow.shape[i].x + shadow.position.x, yi = shadow.shape[i].y + shadow.position.y;
+        const xj = shadow.shape[j].x + shadow.position.x, yj = shadow.shape[j].y + shadow.position.y;
+
+        const intersect = ((yi > position.y) !== (yj > position.y)) && (position.x < (xj - xi) * (position.y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+    }      
+
+    return inside;
   }
 
   renderGlobalLightOverlay(){
     const { canvas, context, rendererContext, camera, cacheCanvas } = this;
     
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    this.clear();
     context.globalCompositeOperation = "source-over";
     context.globalAlpha = 1;
     context.fillStyle = this.color;
@@ -144,7 +204,7 @@ export default class LightingManager{
   renderDarkZones() {
     const { context, cacheCanvas, rendererContext, camera, canvas } = this;
 
-    context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.clear();
     
     context.globalCompositeOperation = "source-over";
 
@@ -358,16 +418,15 @@ export default class LightingManager{
   getGradient(light){
     let gradient = null;
     const { context } = this;
-    const radius = light.radius * 2 * this.camera.scale.x;
+    const radius = light.radius * this.camera.scale.x;
     const distance = light.distance * this.camera.scale.x;
     const position = this.getCanvasPosition(light.position);
     const { angle, type } = light;
     
-    if(type === "spot"){
+    if(type === "radial"){
       gradient = context.createRadialGradient(position.x, position.y, radius, position.x, position.y, 0);
-    }else if (type === "cone"){
-      const angleFix = Math.PI / 4;
-      const direction = new Vector(distance).rotate(angle - angleFix).add(position);
+    }else if (type === "spot"){
+      const direction = new Vector(distance, 0).rotate(angle).add(position);
         
       gradient = context.createRadialGradient(
         direction.x, direction.y, radius, position.x, position.y, 0

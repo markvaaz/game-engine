@@ -60,44 +60,33 @@ export default class SceneManager {
     });
   }
 
-  /**
-   * Performs actions before updating the scenes.
-   * @param {number} Time - The current time.
-   */
-  beforeUpdate = (Time) => {
+
+  beforeUpdate = () => {
     // Calls the beforeUpdate function of the current scene, if it exists
-    if(this.#currentScene) this.#currentScene.beforeUpdate(Time);
+    if(this.#currentScene) this.#currentScene.beforeUpdate();
 
     // Calls the beforeUpdate function of each scene that has updateOnBackground set to true
     this.scenes.forEach(scene => {
-      if(scene.updateOnBackground) scene.beforeUpdate(Time);
+      if(scene.updateOnBackground) scene.beforeUpdate();
     });
   }
 
-  /**
-   * Updates the current scene and other scenes if they should be updated in the background.
-   * @param {number} Time - The current time.
-   */
-  update = (Time) => {
+  update = () => {
     // Update the current scene if it exists
-    if(this.#currentScene) this.#currentScene.update(Time);
+    if(this.#currentScene) this.#currentScene.update();
 
     // Update other scenes if they should be updated in the background
     this.scenes.forEach(scene => {
-      if(scene.updateOnBackground) scene.update(Time);
+      if(scene.updateOnBackground) scene.update();
     });
   }
 
-  /**
-   * Executes after the update of the time.
-   * @param {number} Time - The time value.
-   */
-  afterUpdate = (Time) => {
+  afterUpdate = () => {
     // Executes the beforeRender method.
     this.beforeRender();
 
     // Executes the render method.
-    this.render(Time);
+    this.render();
 
     // Executes the afterRender method.
     this.afterRender();

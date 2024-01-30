@@ -164,20 +164,15 @@ export default class Scene{
     else this.queueToRender.delete(gameObject.id);
   }
 
-  /**
-   * Executes before updating the component.
-   * 
-   * @param {Time} Time - The time value used for updating.
-   */
-  beforeUpdate = (Time) => {
-    this.Camera.beforeUpdate?.(Time);
+  beforeUpdate = () => {
+    this.Camera.beforeUpdate?.();
   }
   
-  update = (Time) => {
+  update = () => {
     // Update the default camera
-    this.Camera.defaultUpdate?.(Time);
+    this.Camera.defaultUpdate?.();
     // Update the camera
-    this.Camera.update?.(Time);
+    this.Camera.update?.();
   
     // Iterate through all game objects
     for(const gameObject of this.GameObjects.values()){
@@ -200,25 +195,25 @@ export default class Scene{
       this.Physics.applyPhysics(gameObject);
 
       // Call the beforeUpdate functions of the game object
-      gameObject.defaultBeforeUpdate?.(Time);
-      gameObject.beforeUpdate?.(Time);
+      gameObject.defaultBeforeUpdate?.();
+      gameObject.beforeUpdate?.();
   
       // Call the defaultUpdate function of the game object
-      gameObject.defaultUpdate(Time);
+      gameObject.defaultUpdate();
   
       // Call the update function of the game object
-      gameObject.update?.(Time);
+      gameObject.update?.();
   
       // Call the afterUpdate functions of the game object
-      gameObject.defaultAfterUpdate?.(Time);
-      gameObject.afterUpdate?.(Time);
+      gameObject.defaultAfterUpdate?.();
+      gameObject.afterUpdate?.();
   
       this.CollisionManager.updateHash(gameObject);
       // Update render information for the game object
       this.updateRenderInformation(gameObject);
     }
 
-    this.CollisionManager.update(Time)
+    this.CollisionManager.update()
     // Update the renderer with the queue of objects to render
     this.Renderer.update(this.queueToRender);
   }

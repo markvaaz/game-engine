@@ -10,7 +10,7 @@ export default class LightSource extends Component{
   #modes = [ "lighter", "source-in", "source-out", "source-over", "source-atop", "destination-over", "destination-in", "destination-out", "destination-atop", "copy", "xor", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "hard-light", "soft-light", "difference", "exclusion", "hue", "saturation", "color", "luminosity"];
 
   // Define an array of available types
-  #types = ["spot", "cone"];
+  #types = ["spot", "radial"];
 
   // Set the default blending mode to "lighter"
   #mode = "lighter";
@@ -24,12 +24,12 @@ export default class LightSource extends Component{
   // Set the default brightness to 1
   #brightness = 1;
 
-  // Set the default type to "spot"
-  #type = "spot";
+  // Set the default type to "radial"
+  #type = "radial";
 
   // Define an array of steps with their start value and color
   #steps = [
-    { start: 0, color: "transparent" },
+    { start: 0, color: "rgba(100, 100, 100, 0)" },
     { start: 1, color: "rgba(255, 255, 255)" }
   ];
 
@@ -44,6 +44,9 @@ export default class LightSource extends Component{
 
   // Set the default distance to 0
   #distance = 0;
+
+  #vertexCache = new Array(5).fill().map(() => new Vector(0, 0));
+  #originCache = new Vector(0, 0);
 
   /**
    * Constructor for the LightSource class.
@@ -67,7 +70,11 @@ export default class LightSource extends Component{
         { start: 1, color: "#fff" }
       ],
       angle: this.#angle,
-      distance: this.#distance
+      distance: this.#distance,
+      bounds: {
+        min: { x:0, y:0 },
+        max: { x:0, y:0 }
+      }
     };
 
     this.GameObject.active = true; //Sets the object as active so it is updated on render
@@ -104,6 +111,7 @@ export default class LightSource extends Component{
     if(isNaN(radius)) throw new Error("LightSource: radius must be a number.");
     this.#radius = radius;
     this.GameObject.Render.lightSource.radius = radius;
+    this.setBounds();
     this.GameObject.active = true; //Sets the object as active so it is updated on render
   }
 
@@ -196,6 +204,7 @@ export default class LightSource extends Component{
     if(isNaN(angle)) throw new Error("LightSource: angle must be a number.");
     this.#angle = angle;
     this.GameObject.Render.lightSource.angle = angle;
+    this.setBounds();
     this.GameObject.active = true; //Sets the object as active so it is updated on render
   }
 
@@ -218,6 +227,7 @@ export default class LightSource extends Component{
     if(isNaN(distance)) throw new Error("LightSource: distance must be a number.");
     this.#distance = distance;
     this.GameObject.Render.lightSource.distance = distance;
+    this.setBounds();
     this.GameObject.active = true; //Sets the object as active so it is updated on render
   }
 
@@ -260,6 +270,10 @@ export default class LightSource extends Component{
     this.GameObject.active = true; //Sets the object as active so it is updated on render
   }
 
+  get bounds(){
+    this.GameObject.Render.lightSource.bounds;
+  }
+
   /**
    * Adds a step to the light source.
    * @param {Object|Array} step - The step or array of steps to add.
@@ -293,6 +307,8 @@ export default class LightSource extends Component{
     // Invert step start value
     step.start = 1 - step.start;
 
+    if(step.color === "transparent") step.color = "rgba(100, 100, 100, 0)";
+
     // Add step to steps array
     this.#steps.push(step);
 
@@ -300,6 +316,36 @@ export default class LightSource extends Component{
     this.GameObject.Render.lightSource.steps = this.#steps;
     this.GameObject.active = true;
   }
+
+  setBounds() {
+    const vertexCache = this.#vertexCache;
+    const origin = this.#originCache.set(this.distance, 0).rotate(this.angle);
+
+    vertexCache[1].set(origin.x - this.radius, origin.y - this.radius);
+    vertexCache[2].set(origin.x - this.radius, origin.y + this.radius);
+    vertexCache[3].set(origin.x + this.radius, origin.y + this.radius);
+    vertexCache[4].set(origin.x + this.radius, origin.y - this.radius);
+  
+    // Cálculo direto dos limites
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+  
+    for (let i = 0; i < vertexCache.length; i++) {
+      const vertex = vertexCache[i];
+      minX = Math.min(minX, vertex.x);
+      minY = Math.min(minY, vertex.y);
+      maxX = Math.max(maxX, vertex.x);
+      maxY = Math.max(maxY, vertex.y);
+    }
+
+    this.GameObject.Render.lightSource.bounds.min.x = minX;
+    this.GameObject.Render.lightSource.bounds.max.x = maxX;
+    this.GameObject.Render.lightSource.bounds.min.y = minY;
+    this.GameObject.Render.lightSource.bounds.max.y = maxY;
+  }
+  
 
   /**
    * Clears the steps array, sets the steps for the light source, and activates the game object.

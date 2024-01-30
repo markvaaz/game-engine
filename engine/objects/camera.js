@@ -380,7 +380,7 @@ export default class Camera extends GameObject{
       this.position.add(positionDifference.mult(force));
 
       // If the distance to the target is less than or equal to 5, set the 'arrived' flag to true
-      if (distanceToTarget <= 5) {
+      if (distanceToTarget <= 1) {
         this.arrived = true;
       }
     } 

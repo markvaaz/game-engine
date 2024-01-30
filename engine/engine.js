@@ -2,6 +2,7 @@ import Runner from "./engine-components/runner.js";
 import Events from "./engine-components/events.js";
 import Vector from "./engine-components/vector.js";
 import SceneManager from "./engine-components/scene-manager.js";
+import Time from "./engine-components/time.js";
 
 export default class Engine{
   /**
@@ -22,15 +23,8 @@ export default class Engine{
 
     // Assign Events class to the Events property
     this.Events = Events;
-  }
 
-  /**
-   * Retrieves the value of the Time property.
-   *
-   * @return {type} The value of the Time property.
-   */
-  get Time(){
-    return this.Runner.Time;
+    this.Time = Time;
   }
 
   /**

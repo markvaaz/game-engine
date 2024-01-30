@@ -13,8 +13,8 @@ export default class Render extends Component{
   visible = false;
   // Specifies the rendering mode (default is "shape")
   mode = "shape";
-  // Specifies whether the rendered object is disabled (default is false)
-  disabled = false;
+  // Specifies whether the rendered object is enabled (default is true)
+  enabled = true;
   // Specifies the layer of the rendered object (default is null)
   layer = null;
   

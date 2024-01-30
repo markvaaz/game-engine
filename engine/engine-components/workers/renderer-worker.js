@@ -212,13 +212,18 @@ class RendererWorker{
 
         else if(gameObject.mode === "sprite")
           await this.renderSprite(gameObject);
-
-        if(gameObject.debug.enabled)
-          this.renderDebug(gameObject);
       }
     }
 
     this.renderLights();
+
+    for(const layer of this.layers.values()){
+      for(const gameObject of layer.values()){
+        if(!gameObject.debug.enabled) continue;
+        
+        this.renderDebug(gameObject);
+      }
+    }
   }
 
   async renderSprite(gameObject) {

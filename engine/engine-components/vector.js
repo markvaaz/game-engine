@@ -410,7 +410,7 @@ export default class Vector{
    */
   setConstraints(minX, maxX, minY, maxY){
     if(minX instanceof Vector || typeof minX === 'object'){
-      if(!isNaN(minX?.x) && !isNaN(minX?.y) && !isNaN(maxX?.x) && !isNaN(maxX?.y))
+      if(!isNaN(minX?.x) && !isNaN(minX?.y) && !isNaN(maxX?.x) && !isNaN(maxX?.y)){}
         return this.setConstraints(minX.x, maxX.x, minX.y, maxX.y);
     }
 
@@ -420,6 +420,8 @@ export default class Vector{
     this.#constraints.x.max = maxX;
     this.#constraints.y.min = minY;
     this.#constraints.y.max = maxY;
+
+    this.#constrain();
 
     return this;
   }
@@ -434,10 +436,10 @@ export default class Vector{
    * @description Constrains the vector to the constraints.
    */
   #constrain(){
-    if(this.#constraints.x.min != null && this.x < this.#constraints.x.min) this.x = this.#constraints.x.min;
-    if(this.#constraints.x.max != null && this.x > this.#constraints.x.max) this.x = this.#constraints.x.max;
-    if(this.#constraints.y.min != null && this.y < this.#constraints.y.min) this.y = this.#constraints.y.min;
-    if(this.#constraints.y.max != null && this.y > this.#constraints.y.max) this.y = this.#constraints.y.max;
+    if(this.#constraints.x.min != null && this.x < this.#constraints.x.min) this.#x = this.#constraints.x.min;
+    if(this.#constraints.x.max != null && this.x > this.#constraints.x.max) this.#x = this.#constraints.x.max;
+    if(this.#constraints.y.min != null && this.y < this.#constraints.y.min) this.#y = this.#constraints.y.min;
+    if(this.#constraints.y.max != null && this.y > this.#constraints.y.max) this.#y = this.#constraints.y.max;
   }
 
   /**

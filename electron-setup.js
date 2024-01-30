@@ -13,11 +13,9 @@ function createWindow() {
 
   mainWindow.setMenuBarVisibility(false);
 
-  // mainWindow.loadFile(join(__dirname, 'index.html'));
+  mainWindow.loadFile(join(__dirname, 'index.html'));
 
-  //load url
-
-  mainWindow.loadURL('http://localhost:5500');
+  // mainWindow.loadURL('http://localhost:5500');
 
   console.log("App Running");
 }
