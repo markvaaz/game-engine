@@ -5,27 +5,22 @@ import SceneManager from "./engine-components/scene-manager.js";
 import Time from "./engine-components/time.js";
 
 export default class Engine{
-  /**
-   * Initialize the class with necessary dependencies.
-   */
-  constructor() {
-    // Create a new instance of SceneManager
-    this.SceneManager = new SceneManager();
+  // Create a new instance of SceneManager
+  static SceneManager = new SceneManager();
 
-    // Set the Renderer property to the Renderer instance of SceneManager
-    this.Renderer = this.SceneManager.Renderer;
+  // Set the Renderer property to the Renderer instance of SceneManager
+  static Renderer = Engine.SceneManager.Renderer;
 
-    // Create a new instance of Runner
-    this.Runner = new Runner();
+  // Create a new instance of Runner
+  static Runner = new Runner();
 
-    // Assign Vector class to the Vector property
-    this.Vector = Vector;
+  // Assign Vector class to the Vector property
+  static Vector = Vector;
 
-    // Assign Events class to the Events property
-    this.Events = Events;
+  // Assign Events class to the Events property
+  static Events = Events;
 
-    this.Time = Time;
-  }
+  static Time = Time;
 
   /**
    * Sets up the function by calling the SceneManager's setup method and 
@@ -33,18 +28,20 @@ export default class Engine{
    * methods to the Runner's onBeforeUpdate, onUpdate, and onAfterUpdate 
    * events respectively.
    */
-  setup(){
-    this.SceneManager.setup();
-    this.Runner.onBeforeUpdate(this.SceneManager.beforeUpdate);
-    this.Runner.onUpdate(this.SceneManager.update);
-    this.Runner.onAfterUpdate(this.SceneManager.afterUpdate);
+  static setup(){
+    Engine.SceneManager.setup();
+    Engine.Runner.onBeforeUpdate(Engine.SceneManager.beforeUpdate);
+    Engine.Runner.onUpdate(Engine.SceneManager.update);
+    Engine.Runner.onAfterUpdate(Engine.SceneManager.afterUpdate);
   }
 
   /**
    * Starts the Runner, which will run the game loop.
    */
-  run(){
-    this.Runner.start();
+  static run(){
+    Engine.setStyle();
+    Engine.setup();
+    Engine.Runner.start();
   }
 
   /**
@@ -53,8 +50,8 @@ export default class Engine{
    * @param {type} paramName - description of parameter
    * @return {type} description of return value
    */
-  stop(){
-    this.Runner.stop();
+  static stop(){
+    Engine.Runner.stop();
   }
 
   /**
@@ -63,7 +60,7 @@ export default class Engine{
    * @param {} - This function does not take any parameters.
    * @return {} - This function does not return a value.
    */
-  setStyle(){
+  static setStyle(){
     document.body.style.margin = 0;
     document.body.style.padding = 0;
     document.body.style.overflow = 'hidden';

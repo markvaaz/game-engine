@@ -27,11 +27,11 @@ function createWindow() {
 
   mainWindow.setMenuBarVisibility(false);
 
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
   
   mainWindow.maximize();
 
-  mainWindow.loadFile(join(__dirname, 'index.html'));
+  mainWindow.loadFile(join(__dirname, '/editor/index.html'));
 
   // mainWindow.loadURL('http://localhost:5500');
 

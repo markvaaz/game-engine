@@ -16,6 +16,8 @@ export default class Renderer {
    */
   worker = new Worker(new URL('./workers/renderer-worker.js', import.meta.url), { type: "module" });
 
+  #set = false;
+
   #antiAliasing = false;
 
   /**
@@ -58,6 +60,10 @@ export default class Renderer {
     this.worker.postMessage({ action: "antiAliasing", value });
   }
 
+  onmessage = (event) => {
+    if(event.data.set) this.#set = true;
+  }
+
   /**
    * Adds a game object for rendering.
    * @param {GameObject} gameObject - The game object to be added.
@@ -87,7 +93,7 @@ export default class Renderer {
    * @param {Camera} camera - The camera configuration for rendering.
    * @param {Light} globalLight - The global light configuration for rendering.
    */
-  setup(camera, globalLight,) {
+  setup(camera, globalLight) {
     this.worker.postMessage({ 
       action: "setup", 
       canvas: this.offscreenCanvas, 
@@ -126,6 +132,7 @@ export default class Renderer {
    * Resizes the canvas based on the current inner width and height of the window.
    */
   resize() {
+    if(!this.#set) return;
     this.worker.postMessage({ action: "resize", width: innerWidth, height: innerHeight });
   }
 }
