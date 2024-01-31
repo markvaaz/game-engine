@@ -1,6 +1,6 @@
 import Collider from "./components/collider.js";
 import RigidBody from "./components/rigid-body.js";
-import PolygonShape from "./components/shapes/polygon-shape.js";
+import { Polygon as PolygonShape } from "./components/shape.js";
 import GameObject from "./game-object.js";
 
 export default class Polygon extends GameObject {

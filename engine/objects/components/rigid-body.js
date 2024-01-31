@@ -38,7 +38,9 @@ export default class RigidBody extends Component{
       throw new Error("RigidBody: No shape component found on game object.");
     }
 
-    this.centerOfMass = shape.getCenterOfMass();
+    console.log(shape, shape.centerOfMass)
+
+    this.centerOfMass = shape.centerOfMass;
     this.area = shape.getArea();
     this.#mass = this.#density * this.area;
     this.#inverseMass = 1 / this.mass;

@@ -1,7 +1,7 @@
 import Vector from "../../engine-components/vector.js";
 import Component from "./component.js";
 
-export default class Shape extends Component{
+class CustomShape extends Component{
   static name = 'Shape';
   name = 'Shape';
   staticVertices = [];
@@ -132,10 +132,10 @@ export default class Shape extends Component{
   /**
    * Copies the given shape by adding its vertices to the current shape.
    *
-   * @param {Shape} shape - The shape to be copied.
+   * @param {CustomShape} shape - The shape to be copied.
    */
   copyShape(shape){
-    if(!(shape instanceof Shape)) return;
+    if(!(shape instanceof CustomShape)) return;
     this.addVertices(shape.vertices);
   }
 
@@ -282,6 +282,7 @@ export default class Shape extends Component{
     // Calculate the center of mass as the average of the x and y coordinates.
     this.#centerOfMass = new Vector(x / this.vertices.length, y / this.vertices.length);
 
+    console.log(this.#centerOfMass)
     if(dontAddPosition) return this.#centerOfMass;
 
     // Adjust the center of mass by the position of the GameObject.
@@ -305,3 +306,127 @@ export default class Shape extends Component{
            this.bounds.max.y + expansionAmount > bounds.min.y;
   }
 }
+
+class Capsule extends CustomShape{
+  type = 'capsule';
+  
+  constructor(gameObject){
+    super(gameObject);
+    this.createShape();
+    this.GameObject.size.onChange(() => this.createShape());
+  }
+
+  createShape(){
+    const vertices = [];
+
+    let { x, y } = this.GameObject.size;
+
+    if(x === y) x *= 0.99; // Vertex overlap fix;
+
+    const radius = Math.min(x, y) / 2;
+
+    const topCircleCenter = new Vector(0, -y / 2 + radius);
+    const bottomCircleCenter = new Vector(0, y / 2 - radius);
+    let vertexCount = Math.round(x * 0.1);
+
+    if(vertexCount % 2 !== 0) vertexCount += 1;
+
+    const angleStep = Math.PI / Math.max(vertexCount + 1, 7);
+
+    // Add the vertices of the top circle
+    for(let i = Math.PI; i < Math.PI * 2 + 0.1; i += angleStep){
+      const x = topCircleCenter.x + radius * Math.cos(i);
+      const y = topCircleCenter.y + radius * Math.sin(i);
+      vertices.push(new Vector(x, y));
+    }
+  
+    // Add the vertices of the bottom circle
+    for(let i = 0; i < Math.PI + 0.1; i += angleStep){
+      const x = bottomCircleCenter.x + radius * Math.cos(i);
+      const y = bottomCircleCenter.y + radius * Math.sin(i);
+      vertices.push(new Vector(x, y));
+    }
+  
+    this.addVertices(vertices, true);
+  }
+}
+
+class Ellipse extends CustomShape{
+  type = 'ellipse';
+  
+  constructor(gameObject){
+    super(gameObject);
+    this.createShape();
+
+    this.GameObject.Render.shape.type = 'ellipse';
+    this.GameObject.size.onChange(() => this.createShape());
+  }
+
+  createShape(){
+    const vertices = [];
+    const size = this.GameObject.size;
+    const sidesCount = Math.round(size.x * 0.3);
+    const sides = Math.min(Math.max(sidesCount, 8), 50);
+
+    for(let i = 0; i < sides; i++){
+      const angle = Math.PI * 2 / sides * i - Math.PI / 2;
+      const x = Math.cos(angle) * size.x / 2;
+      const y = Math.sin(angle) * size.y / 2;
+      vertices.push(new Vector(x, y));
+    }
+
+    this.addVertices(vertices, true);
+  }
+}
+
+class Polygon extends CustomShape{
+  type = 'polygon';
+
+  constructor(gameObject, sides = 3){
+    super(gameObject);
+    this.sides = sides;
+    this.createShape();
+
+    this.GameObject.size.onChange(() => this.createShape());
+  }
+
+  createShape(){
+    const vertices = [];
+    const radius = this.GameObject.size.x / 2;
+
+    for(let i = 0; i < this.sides; i++){
+      const angle = (i * 2 * Math.PI / this.sides) - (Math.PI / 2);
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
+      vertices.push(new Vector(x, y));
+    }
+
+    this.addVertices(vertices, true);
+  }
+}
+
+class Rectangle extends CustomShape{
+  type = 'rectangle';
+  
+  constructor(gameObject){
+    super(gameObject);
+    this.createShape();
+    // this.GameObject.Render.shape.type = 'rectangle';
+
+    this.GameObject.size.onChange(() => this.createShape());
+  }
+
+  createShape(){
+    const vertices = [];
+    const size = this.GameObject.size;
+
+    vertices.push(new Vector(-size.x / 2, -size.y / 2));
+    vertices.push(new Vector(size.x / 2, -size.y / 2));
+    vertices.push(new Vector(size.x / 2, size.y / 2));
+    vertices.push(new Vector(-size.x / 2, size.y / 2));
+
+    this.addVertices(vertices, true);
+  }
+}
+
+export { CustomShape, Capsule, Ellipse, Polygon, Rectangle };
