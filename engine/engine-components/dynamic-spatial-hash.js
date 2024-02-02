@@ -12,8 +12,6 @@
  * @see {@link https://github.com/markvaaz} GitHub
  */
 
-import Vector from "./vector.js";
-
 export default class DynamicSpatialHash{
   #cellSize = 32;
   #invertedCellSize = 1 / 32;

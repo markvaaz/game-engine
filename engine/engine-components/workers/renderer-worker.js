@@ -100,8 +100,9 @@ class RendererWorker{
     const bounds = gameObject.shape.bounds || gameObject.transform.bounds;
     const offset = 200 + (gameObject.lightSource ? (gameObject.lightSource.radius * 2 + gameObject.lightSource.distance) : 0);
     const cameraBounds = this.camera.bounds;
-    const isWithinXBounds = bounds.max.x >= cameraBounds.min.x - offset && bounds.min.x <= cameraBounds.max.x + (offset * 2);
-    const isWithinYBounds = bounds.max.y >= cameraBounds.min.y - offset && bounds.min.y <= cameraBounds.max.y + (offset * 2);
+    const position = gameObject.transform.position;
+    const isWithinXBounds = bounds.max.x + position.x >= cameraBounds.min.x - offset && bounds.min.x + position.x <= cameraBounds.max.x + (offset * 2);
+    const isWithinYBounds = bounds.max.y + position.y >= cameraBounds.min.y - offset && bounds.min.y + position.y <= cameraBounds.max.y + (offset * 2);
     
     gameObject.visible = isWithinXBounds && isWithinYBounds;
     if(gameObject.lightSource != null){

@@ -6,8 +6,8 @@ export default class SAT{
   GameObjects = new Map();
   Collisions = new Set();
   SpatialHash = new DynamicSpatialHash(64);
-  iterations = 1;
-  collisionInformation = { collided: false, normal: new Vector(), overlap: Infinity, tangent: new Vector(), penetration: new Vector(), axis: new Vector(), center: new Vector() };
+  iterations = 2;
+  collisionInformation = { collided: false, normal: new Vector(), overlap: Infinity, tangent: new Vector(), penetration: new Vector(), axis: new Vector(), center: new Vector(), vertexA: new Vector(), vertexB: new Vector() };
 
   constructor({ cellSize = 64 } = {}){
     this.SpatialHash.cellSize = cellSize;
@@ -145,8 +145,6 @@ export default class SAT{
     ) return { collided: false };
     
     const CI = this.collisionInformation;
-    const verticesA = gameObjectA.Shape.vertices;
-    const verticesB = gameObjectB.Shape.vertices;
 
     // Reset the collision information
     CI.collided = false;
@@ -157,13 +155,13 @@ export default class SAT{
     // it will loop 30 times instead of 50 (the some of the vertices length).
     // Although the number of calculations in this state is approximately the same,
     // it may be helpful (or not) depending on the changes.
-    const lengthA = verticesA.length;
-    const lengthB = verticesB.length;
+    const lengthA = gameObjectA.Shape.vertices.length;
+    const lengthB = gameObjectB.Shape.vertices.length;
     const maxLength = Math.max(lengthA, lengthB);
 
     for(let i = 0; i < maxLength; i++){
-      if(i < lengthA && !this.getMTV(verticesA, verticesB, i)) return CI;
-      if(i < lengthB && !this.getMTV(verticesB, verticesA, i)) return CI;
+      if(i < lengthA && !this.getMTV(gameObjectA, gameObjectB, i)) return CI;
+      if(i < lengthB && !this.getMTV(gameObjectB, gameObjectA, i)) return CI;
     }
 
     // Calculate the relative position vector 'center' from the center of gameObjectA to gameObjectB,
@@ -191,16 +189,19 @@ export default class SAT{
    * @param {number} index - Index of the current vertex in verticesA.
    * @returns {boolean} - Returns true if a collision occurred, false otherwise.
    */
-  getMTV(verticesA, verticesB, index){
-    const vertexA = verticesA[index];
-    const vertexB = verticesA[index + 1] ?? verticesA[0];
+  getMTV(gameObjectA, gameObjectB, index){
+    const vertices = gameObjectA.Shape.vertices;
+    const position = gameObjectA.Shape.centerOfMass;
     const CI = this.collisionInformation;
+    const vertexA = CI.vertexA.set(vertices[index]).add(position);
+    const vertexB = CI.vertexB.set(vertices[index + 1] ?? vertices[0]).add(position);
+
 
     // Calculate the axis perpendicular to the current edge.
     const axis = CI.axis.set(-(vertexB.y - vertexA.y), vertexB.x - vertexA.x).normalize();
     
     // Get the overlap along the axis.
-    const overlap = this.getOverlap(axis, verticesA, verticesB);
+    const overlap = this.getOverlap(axis, gameObjectA, gameObjectB);
 
     // If there's no overlap, update the MTV to indicate no collision.
     if(overlap === 0) return CI.collided = false;
@@ -230,27 +231,34 @@ export default class SAT{
    * @param {Array} verticesB - Vertices of the second object.
    * @returns {number} - The overlap between the two sets of vertices along the specified axis.
    */
-  getOverlap(axis, verticesA, verticesB){
+  getOverlap(axis, gameObjectA, gameObjectB){
     let minA = Infinity;
     let maxA = -Infinity;
     let minB = Infinity;
     let maxB = -Infinity;
 
+    const verticesA = gameObjectA.Shape.vertices;
+    const verticesB = gameObjectB.Shape.vertices;
+    const positionA = gameObjectA.Shape.centerOfMass;
+    const positionB = gameObjectB.Shape.centerOfMass;
     const lengthA = verticesA.length;
     const lengthB = verticesB.length;
+    const CI = this.collisionInformation;
 
     const maxLength = Math.max(lengthA, lengthB);
 
     // Loop through vertices to calculate projections and find minimum and maximum values
     for (let i = 0; i < maxLength; i++) {
       if(i < lengthA){
-        const projection = axis.dot(verticesA[i]);
+        const vertex = CI.vertexA.set(verticesA[i]).add(positionA);
+        const projection = axis.dot(vertex);
         minA = Math.min(minA, projection);
         maxA = Math.max(maxA, projection);
       }
 
       if(i < lengthB){
-        const projection = axis.dot(verticesB[i]);
+        const vertex = CI.vertexB.set(verticesB[i]).add(positionB);
+        const projection = axis.dot(vertex);
         minB = Math.min(minB, projection);
         maxB = Math.max(maxB, projection);
       }

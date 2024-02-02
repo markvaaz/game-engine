@@ -1,5 +1,6 @@
 import Vector from "./vector.js";
 import SAT from "./sat.js";
+import CollisionManager from "./collision-manager.js";
 
 export default class Physics{
   wind = new Vector(0, 0);
