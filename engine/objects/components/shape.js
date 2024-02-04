@@ -281,8 +281,6 @@ class CustomShape extends Component{
 
     // Calculate the center of mass as the average of the x and y coordinates.
     this.#centerOfMass = new Vector(x / this.vertices.length, y / this.vertices.length);
-
-    console.log(this.#centerOfMass)
     if(dontAddPosition) return this.#centerOfMass;
 
     // Adjust the center of mass by the position of the GameObject.

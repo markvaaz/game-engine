@@ -218,6 +218,8 @@ export default class Runner{
       // Update the time object with the current time
       Time.update(now);
 
+      Events.emit("update", Time);
+
       // Call the before update callbacks
       for(const callback of this.#beforeUpdateCallbacks.values()) callback();
 

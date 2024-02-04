@@ -9,12 +9,12 @@ export default class SceneManager {
   /**
    * Creates a new scene and adds it to the renderer.
    *
-   * @param {string} scene - The name of the scene.
+   * @param {string} sceneName - The name of the scene.
    * @return {Scene} The newly created scene.
    */
-  createScene(scene){
+  createScene(sceneName){
     const newScene = new Scene(this.Renderer);
-    newScene.name = scene;
+    newScene.name = sceneName;
     this.addScene(newScene);
 
     return newScene;
@@ -32,11 +32,21 @@ export default class SceneManager {
   /**
    * Change the current scene to the specified scene.
    *
-   * @param {string} scene - The name of the scene to change to.
-   * @return {undefined} This function does not return a value.
+   * @param {string|Scene} sceneName - The name of the scene to change to.
+   * @return {Scene} The new scene.
    */
-  changeScene(scene){
-    this.#currentScene = this.scenes.get(scene);
+  changeScene(sceneName){
+    if(sceneName instanceof Scene){
+      if(!this.scenes.has(sceneName.name)) {
+        this.scenes.set(sceneName.name, sceneName);
+      }
+      
+      sceneName = sceneName.name;
+    }
+    
+    this.#currentScene = this.scenes.get(sceneName);
+
+    return this.#currentScene;
   }
 
   /**

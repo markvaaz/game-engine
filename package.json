@@ -3,7 +3,7 @@
     "electron": "^28.0.0"
   },
   "name": "game-engine",
-  "version": "1.0.0",
+  "version": "0.8.11",
   "description": "A simple 2D game engine with javascript canvas",
   "main": "electron-setup.js",
   "dependencies": {

@@ -131,8 +131,8 @@ export default class Renderer {
   /**
    * Resizes the canvas based on the current inner width and height of the window.
    */
-  resize() {
+  resize(width = innerWidth, height = innerHeight) {
     if(!this.#set) return;
-    this.worker.postMessage({ action: "resize", width: innerWidth, height: innerHeight });
+    this.worker.postMessage({ action: "resize", width, height });
   }
 }

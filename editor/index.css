@@ -1,0 +1,6 @@
+#engine iframe{
+  width: 600px;
+  height: 450px;
+  border: 1px solid #333;
+  resize: both;
+}

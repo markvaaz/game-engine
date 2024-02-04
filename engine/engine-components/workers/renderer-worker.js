@@ -382,15 +382,23 @@ class RendererWorker{
     this.LightingManager.cacheCanvas.width = this.canvas.width;
     this.LightingManager.cacheCanvas.height = this.canvas.height;
     this.updateGlobalLight(globalLight);
+    self.postMessage({ set:true });
   }
 
   resize({ width, height }){
+    const transform = this.context.getTransform();
+    const LMTransform = this.LightingManager.context.getTransform();
+    const LMCacheTransform = this.LightingManager.cacheContext.getTransform();
     this.canvas.width = width;
     this.canvas.height = height;
     this.LightingManager.canvas.width = width;
     this.LightingManager.canvas.height = height;
     this.LightingManager.cacheCanvas.width = width;
     this.LightingManager.cacheCanvas.height = height;
+
+    this.context.setTransform(transform);
+    this.LightingManager.context.setTransform(LMTransform);
+    this.LightingManager.cacheContext.setTransform(LMCacheTransform);
   }
 }
 

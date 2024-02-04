@@ -89,9 +89,8 @@ export default class Scene{
    *
    * @param {GameObject} gameObject - The game object to be added.
    */
-  add(gameObject){
-    if(!(gameObject instanceof GameObject)) return;
-
+  add(gameObject, forceAdd = false){
+    if(!(gameObject instanceof GameObject) && !forceAdd) return;
     this.addedObjects++;
 
     const { updateMode, id, children } = gameObject;

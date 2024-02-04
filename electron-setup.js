@@ -1,7 +1,7 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu } from 'electron';
 import { fileURLToPath } from 'url';
-import path, { dirname, join } from 'path';
-import dotenv from 'dotenv';
+import { dirname, join } from 'path';
+import menu from './editor/menu.js';
 
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = true;
 
@@ -14,18 +14,8 @@ function createWindow() {
     height: 1024,
     x: 1920,
     y: 0,
-    darkTheme: true,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    },
-    ELECTRON_DISABLE_SECURITY_WARNINGS: true
+    darkTheme: true
   });
-
-  //solve Electron Security Warning
-  mainWindow.ELECTRON_DISABLE_SECURITY_WARNINGS = true
-
-  mainWindow.setMenuBarVisibility(false);
 
   mainWindow.webContents.openDevTools();
   
@@ -33,7 +23,9 @@ function createWindow() {
 
   mainWindow.loadFile(join(__dirname, '/editor/index.html'));
 
-  // mainWindow.loadURL('http://localhost:5500');
+  const menuBuild = Menu.buildFromTemplate(menu);
+  
+  Menu.setApplicationMenu(menuBuild);
 
   console.log("App Running");
 }
