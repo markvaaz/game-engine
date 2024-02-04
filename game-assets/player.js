@@ -1,14 +1,10 @@
 import GameObject from "../engine/objects/game-object.js";
 import Events from "../engine/engine-components/events.js";
-import CapsuleShape from "../engine/objects/components/shapes/capsule-shape.js";
+import { Capsule } from "../engine/objects/components/shape.js";
 import Collider from "../engine/objects/components/collider.js";
 import Vector from "../engine/engine-components/vector.js";
 import LightSource from "../engine/objects/components/light-source.js";
 import AnimatedSprite from "../engine/objects/components/animated-sprite-sheet.js";
-import Sprite from "../engine/objects/components/sprite.js";
-import EllipseShape from "../engine/objects/components/shapes/ellipse-shape.js";
-import RectangleShape from "../engine/objects/components/shapes/rectangle-shape.js";
-import Shadow from "../engine/objects/components/shadow.js";
 import Time from "../engine/engine-components/time.js";
 
 export default class Player extends GameObject{
@@ -18,7 +14,7 @@ export default class Player extends GameObject{
   constructor(x, y){
     super();
     this.position.set(x, y);
-    this.add(CapsuleShape);
+    this.add(Capsule);
     this.add(Collider);
     this.debug = true;
     this.size.set(60, 80);

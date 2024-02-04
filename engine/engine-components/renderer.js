@@ -16,7 +16,6 @@ export default class Renderer {
    */
   worker = new Worker(new URL('./workers/renderer-worker.js', import.meta.url), { type: "module" });
 
-  #set = false;
 
   #antiAliasing = false;
 
@@ -58,10 +57,6 @@ export default class Renderer {
   set antiAliasing(value) {
     this.#antiAliasing = value;
     this.worker.postMessage({ action: "antiAliasing", value });
-  }
-
-  onmessage = (event) => {
-    if(event.data.set) this.#set = true;
   }
 
   /**

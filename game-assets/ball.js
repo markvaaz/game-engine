@@ -6,13 +6,12 @@ import Ellipse from "../engine/objects/ellipse.js";
 import Polygon from "../engine/objects/polygon.js";
 import Rectangle from "../engine/objects/rectangle.js";
 
-export default class Ball extends Rectangle{
+export default class Ball extends Polygon {
   name = "Test";
   type = "Ball";
   constructor(x, y){
     super(64, 64, 6);
     this.position.set(x, y);
-    this.size.set(200);
     this.speed = 10;
     this.direction = new Vector(3, 3);
     this.add(Shadow);
@@ -50,7 +49,7 @@ export default class Ball extends Rectangle{
       this.RigidBody.velocity.set(movement.x, movement.y);
     }
 
-    // this.randomMovement(Time);
+    this.randomMovement(Time);
   }
   
 }

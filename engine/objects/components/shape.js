@@ -5,8 +5,8 @@ class CustomShape extends Component{
   static name = 'Shape';
   name = 'Shape';
   staticVertices = [];
-  rotatedVertices = [];
   vertices = [];
+  verticesObject = [];
   #type = 'polygon';
   #added = false;
   #centerOfMass = null;
@@ -46,7 +46,7 @@ class CustomShape extends Component{
   }
 
   get centerOfMass(){ return this.getCenterOfMass(); }
-  get bounds(){ return { min: this.#bounds.min.copy, max: this.#bounds.max.copy } }
+  get bounds(){ return { min: this.#bounds.min.copy.add(this.GameObject.position), max: this.#bounds.max.copy.add(this.GameObject.position) } }
   get borderColor(){ return this.#borderColor }
   get color(){ return this.#color }
   get borderWidth(){ return this.#borderWidth }
@@ -92,7 +92,6 @@ class CustomShape extends Component{
 
   setListener(){
     this.GameObject.Transform.Rotation.onChange(this.updateVertices);
-    this.GameObject.position.onChange(this.updateVertices);
     this.GameObject.Transform.anchor.onChange(this.updateVertices);
   }
 
@@ -150,7 +149,7 @@ class CustomShape extends Component{
     if(reset){
       this.staticVertices = [];
       this.vertices = [];
-      this.rotatedVertices = [];
+      this.verticesObject = [];
     }
 
     // Add vertices to the render object
@@ -163,9 +162,6 @@ class CustomShape extends Component{
 
       // Add the vertex to the edges array
       this.staticVertices.push(vertex.copy.lock());
-
-      // Add the vertex to the shape
-      this.addVertex(vertex);
     });
 
     // Set the 'added' flag to true
@@ -174,7 +170,7 @@ class CustomShape extends Component{
     // Update the vertices
     this.updateVertices();
 
-    this.GameObject.Render.shape.centerOfMass = this.getCenterOfMass(true).toObject();
+    this.GameObject.Render.shape.centerOfMass = this.getCenterOfMass().toObject();
   }
 
   /**
@@ -187,30 +183,14 @@ class CustomShape extends Component{
   }
 
   /**
-   * Adds a vertex to the list of vertices.
-   *
-   * @param {Vector} vertex - The vertex to be added.
-   */
-  addVertex(vertex){
-    if(!(vertex instanceof Vector)) return;
-    
-    vertex.rotate(this.GameObject.rotation);
-    vertex.subtract(this.GameObject.Transform.anchor);
-    this.rotatedVertices.push(vertex.copy);
-    vertex.add(this.GameObject.position);
-
-    this.vertices.push(vertex);
-  }
-
-  /**
    * Updates the vertices of the object based on the edges, rotation, position, and anchor.
    */
   updateVertices = () => {
     // Check if the object has been added or is active
-    if (!this.#added || !this.GameObject.active) return;
+    if (!this.#added) return;
 
     this.vertices = [];
-    this.rotatedVertices = [];
+    this.verticesObject = [];
 
     // Initialize the minimum and maximum coordinates
     let minX = Number.POSITIVE_INFINITY;
@@ -227,35 +207,30 @@ class CustomShape extends Component{
       
       // Subtract the object's anchor from the vertex
       vertex.subtract(this.GameObject.anchor);
+
+      // Add the vertex to the vertices array
+      this.vertices.push(vertex);
+      this.verticesObject.push(vertex.toObject());
       
-      this.rotatedVertices.push(vertex.copy);
-
-      // Add the object's position to the vertex
-      vertex.add(this.GameObject.position);
-
       // Update the minimum and maximum coordinates
       minX = Math.min(minX, vertex.x);
       minY = Math.min(minY, vertex.y);
       maxX = Math.max(maxX, vertex.x);
       maxY = Math.max(maxY, vertex.y);
-
-      // Add the vertex to the vertices array
-      this.vertices.push(vertex);
     }
-
     // Set the bounds using the minimum and maximum coordinates
     this.#bounds.min.set(minX, minY);
     this.#bounds.max.set(maxX, maxY);
 
     if(this.GameObject.Transform.previousRotation !== this.GameObject.rotation){
-      this.GameObject.Render.addVertices(this.rotatedVertices);
+      this.GameObject.Render.addVertices(this.vertices);
     }
 
     // Update the bounds of the object's renderer
     this.GameObject.Render.updateBounds(this.#bounds);
 
     if(this.GameObject.Shadow && !this.GameObject.Shadow.added){
-      this.GameObject.Shadow.add(this.rotatedVertices, true);
+      this.GameObject.Shadow.add(this.vertices, true);
     }
   }
 
@@ -263,12 +238,12 @@ class CustomShape extends Component{
    * Calculates the center of mass of the object.
    * @returns {Vector} The center of mass as a Vector.
    */
-  getCenterOfMass = (dontAddPosition = false) => {
+  getCenterOfMass = (reset = false) => {
     // If the object has not been added, return early.
     if (!this.#added) return;
 
     // If the center of mass has already been calculated, return it.
-    if (this.#centerOfMass) return this.#centerOfMass.copy.add(this.GameObject.position);
+    if (this.#centerOfMass && !reset) return this.#centerOfMass.copy.add(this.GameObject.position);
 
     let x = 0;
     let y = 0;
@@ -281,7 +256,6 @@ class CustomShape extends Component{
 
     // Calculate the center of mass as the average of the x and y coordinates.
     this.#centerOfMass = new Vector(x / this.vertices.length, y / this.vertices.length);
-    if(dontAddPosition) return this.#centerOfMass;
 
     // Adjust the center of mass by the position of the GameObject.
     return this.#centerOfMass.copy.add(this.GameObject.position);
@@ -296,7 +270,6 @@ class CustomShape extends Component{
   isWithinBounds = (bounds, expansionAmount = 0) => {
     // If bounds is falsy, return false
     if(!bounds) return false;
-
     // Check if the current bounds are within the given bounds
     return this.bounds.min.x - expansionAmount < bounds.max.x && 
            this.bounds.max.x + expansionAmount > bounds.min.x && 

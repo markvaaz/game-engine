@@ -21,7 +21,7 @@ function createWindow() {
   
   mainWindow.maximize();
 
-  mainWindow.loadFile(join(__dirname, '/editor/index.html'));
+  mainWindow.loadFile(join(__dirname, '/index.html'));
 
   const menuBuild = Menu.buildFromTemplate(menu);
   

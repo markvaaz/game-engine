@@ -43,11 +43,11 @@ export default class Scene{
     this.Renderer = renderer;
 
     // Create a new camera object and add it to the scene.
-    this.camera = new Camera();
-    this.addCamera(this.camera);
+    this.Camera = new Camera();
+    this.addCamera(this.Camera);
 
     // Setup the renderer with the camera and global light.
-    this.Renderer.setup(this.camera, this.globalLight);
+    this.Renderer.setup(this.Camera, this.globalLight);
   }
 
   /**
@@ -179,7 +179,7 @@ export default class Scene{
     this.Camera.beforeUpdate?.();
   }
   
-  update = () => {
+  update = async () => {
     // Update the default camera
     this.Camera.defaultUpdate?.();
     // Update the camera
@@ -224,7 +224,7 @@ export default class Scene{
       this.updateRenderInformation(gameObject);
     }
 
-    this.CollisionManager.update()
+    await this.CollisionManager.update(this.Camera)
     // Update the renderer with the queue of objects to render
     this.Renderer.update(this.queueToRender);
   }
