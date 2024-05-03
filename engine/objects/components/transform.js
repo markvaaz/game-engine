@@ -6,6 +6,8 @@ export default class Transform extends Component{
   static name = 'Transform';
   // Name of the Transform instance
   name = 'Transform';
+  // File name of the Transform 
+  fileName = 'transform';
   // Position of the Transform
   position = new Vector();
   // Previous position of the Transform
@@ -40,6 +42,22 @@ export default class Transform extends Component{
     this.position.onChange(this.updateFramesWithoutMovement);
     this.Rotation.onChange(() => this.updateFramesWithoutMovement(true));
   }
+
+  save(){
+    return {
+      ...this,
+      rotation: this.#rotation,
+      active: this.#active
+    }
+  }
+
+  // load(data){
+  //   Object.keys(data).forEach(key => {
+  //     if(this[key] && this[key] instanceof Vector) return this[key].set(data[key]);
+
+  //     this[key] = data[key];
+  //   });
+  // }
 
   /**
    * Retrieves the value of the 'active' property.

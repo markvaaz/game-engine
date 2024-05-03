@@ -4,6 +4,8 @@ import { Capsule as CapsuleShape } from "./components/shape.js";
 import GameObject from "./game-object.js";
 
 export default class Capsule extends GameObject {
+  fileName = "capsule";
+  
   constructor(width, height) {
     super();
 

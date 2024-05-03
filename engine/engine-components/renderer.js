@@ -1,5 +1,3 @@
-import Events from "./events.js";
-
 /**
  * The Renderer class is responsible for rendering game objects on a canvas using a web worker.
  */
@@ -16,6 +14,7 @@ export default class Renderer {
    */
   worker = new Worker(new URL('./workers/renderer-worker.js', import.meta.url), { type: "module" });
 
+  clearing = false;
 
   #antiAliasing = false;
 
@@ -59,20 +58,20 @@ export default class Renderer {
     this.worker.postMessage({ action: "antiAliasing", value });
   }
 
+  onmessage = (event) => {
+    const actions = {
+      cleared: () => this.clearing = false
+    }
+
+    if(actions[event.data.action]) actions[event.data.action](event.data);
+  }
+
   /**
    * Adds a game object for rendering.
    * @param {GameObject} gameObject - The game object to be added.
    */
   add(gameObject) {
     this.worker.postMessage({ action: "add", gameObject: gameObject.Render });
-  }
-
-  /**
-   * Deletes a game object from rendering.
-   * @param {GameObject} gameObject - The game object to be deleted.
-   */
-  delete(gameObject) {
-    this.worker.postMessage({ action: "delete", gameObject: gameObject.Render });
   }
 
   /**
@@ -88,15 +87,22 @@ export default class Renderer {
    * @param {Camera} camera - The camera configuration for rendering.
    * @param {Light} globalLight - The global light configuration for rendering.
    */
-  setup(camera, globalLight) {
-    this.worker.postMessage({ 
-      action: "setup", 
-      canvas: this.offscreenCanvas, 
-      camera: camera.toObject(), 
-      globalLight: { color: globalLight.color, brightness: globalLight.brightness },
+  setupCanvas() {
+    this.worker.postMessage({
+      action: "setup",
+      canvas: this.offscreenCanvas,
       antiAliasing: this.#antiAliasing
-
     }, [this.offscreenCanvas]);
+  }
+
+  setupScene(camera, globalLight) {
+    if(!camera || !globalLight) return;
+
+    this.worker.postMessage({ 
+      action: "setupScene",
+      camera: camera.toObject(), 
+      globalLight: { color: globalLight.color, brightness: globalLight.brightness }
+    });
   }
 
   /**
@@ -104,6 +110,7 @@ export default class Renderer {
    * @param {Camera} camera - The updated camera configuration.
    */
   updateCamera(camera) {
+    if(!camera) return;
     this.worker.postMessage({ action: "updateCamera", camera });
   }
 
@@ -128,5 +135,10 @@ export default class Renderer {
    */
   resize() {
     this.worker.postMessage({ action: "resize", width: innerWidth, height: innerHeight });
+  }
+
+  clear(){
+    this.clearing = true;
+    this.worker.postMessage({ action: "clear" });
   }
 }

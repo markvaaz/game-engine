@@ -6,9 +6,11 @@ import Ellipse from "../engine/objects/ellipse.js";
 import Polygon from "../engine/objects/polygon.js";
 import Rectangle from "../engine/objects/rectangle.js";
 
-export default class Ball extends Polygon {
+export default class Ball extends Ellipse {
   name = "Test";
   type = "Ball";
+  fileName = "ball";
+  path = "/game-assets/";
   constructor(x, y){
     super(64, 64, 6);
     this.position.set(x, y);

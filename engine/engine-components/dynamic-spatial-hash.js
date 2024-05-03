@@ -139,6 +139,7 @@ export default class DynamicSpatialHash{
    * - Removes the  object from the old hashes and adds it to the new hashes
    */
   update(object){
+    if(!object || !object.__spatialHashes) return;
     this.delete(object).add(object);
   }
 

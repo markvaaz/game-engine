@@ -10,9 +10,9 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1280,
+    width: 720,
     height: 1024,
-    x: 1920,
+    x: -1200,
     y: 0,
     darkTheme: true,
     webPreferences: {
@@ -22,12 +22,9 @@ function createWindow() {
     ELECTRON_DISABLE_SECURITY_WARNINGS: true
   });
 
-  //solve Electron Security Warning
-  mainWindow.ELECTRON_DISABLE_SECURITY_WARNINGS = true
-
   mainWindow.setMenuBarVisibility(false);
 
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
   
   mainWindow.maximize();
 

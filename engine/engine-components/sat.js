@@ -1,5 +1,6 @@
 import DynamicSpatialHash from "./dynamic-spatial-hash.js";
 import Events from "./events.js";
+import Time from "./time.js";
 import Vector from "./vector.js";
 
 export default class SAT{
@@ -14,7 +15,7 @@ export default class SAT{
   }
 
   add(gameObject){
-    if(!gameObject.Collider) return;
+    if(!gameObject.components.get("Collider")) return;
     this.GameObjects.set(gameObject.id, gameObject);
     this.SpatialHash.add(gameObject);
   }

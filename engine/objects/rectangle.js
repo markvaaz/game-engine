@@ -4,6 +4,8 @@ import { Rectangle as RectangleShape } from "./components/shape.js";
 import GameObject from "./game-object.js";
 
 export default class Rectangle extends GameObject {
+  fileName = "rectangle";
+  
   constructor(width, height) {
     super();
 

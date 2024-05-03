@@ -4,6 +4,8 @@ import { Polygon as PolygonShape } from "./components/shape.js";
 import GameObject from "./game-object.js";
 
 export default class Polygon extends GameObject {
+  fileName = "polygon";
+  
   constructor(width, height, sides = 3) {
     super();
 

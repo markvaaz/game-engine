@@ -10,16 +10,18 @@ import Time from "../engine/engine-components/time.js";
 export default class Player extends GameObject{
   name = "Player";
   direction = new Vector(0, 0);
+  path = "/game-assets/";
+  fileName = "player";
 
   constructor(x, y){
     super();
     this.position.set(x, y);
     this.add(Capsule);
     this.add(Collider);
-    this.debug = true;
-    this.size.set(60, 80);
+    // this.debug = true;
+    this.size.set(30, 40);
     this.layer = 1
-    this.add(LightSource, 200);
+    this.add(LightSource, 60);
     // this.add(Shadow);
     this.LightSource.enabled = false;
     this.LightSource.type = "spot"; 
@@ -27,7 +29,7 @@ export default class Player extends GameObject{
       { start: 0, color: "#fff" },
       { start: 1, color: "transparent" }
     ]);
-    this.LightSource.brightness = 1;
+    this.LightSource.brightness = 0.5;
     // this.LightSource.mode = "soft-light";
 
     this.Render.mode = "sprite";
@@ -46,15 +48,14 @@ export default class Player extends GameObject{
 
   setup(){
     this.add(AnimatedSprite, {
-      src: "/game-assets/swordman/swordman.png",
+      src: "/game-assets/sprites/characters/police/police-1.png",
       cellSize: new Vector(64, 64),
       frameRate: 8,
       rowIndex: 0,
       name: "idle",
       collumns: 6,
-      scale: new Vector(3),
+      scale: new Vector(2),
       anchor: new Vector(0.05, -0.05),
-      debug: true
     });
 
     this.AnimatedSprite.copy("idle", { name: "walk", rowIndex: 1 });
@@ -62,7 +63,7 @@ export default class Player extends GameObject{
   }
 
   move(){
-    const speed = 300;
+    const speed = 150;
     let forceX = 0;
     let forceY = 0;
 

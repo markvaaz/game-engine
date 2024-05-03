@@ -5,6 +5,8 @@ import Component from "./component.js";
 export default class AnimatedSprite extends Component{
   static name = "AnimatedSprite";
   name = "AnimatedSprite";
+  fileName = "animated-sprite-sheet";
+
   frame = 0;
   type = "set";
   #facings = ["left", "right"];
@@ -19,8 +21,34 @@ export default class AnimatedSprite extends Component{
   constructor(GameObject, animation){
     super();
     this.GameObject = GameObject;
-    this.add(animation);
+
+    if(animation != null){
+      this.add(animation);
+      this.addSpriteToRender();
+    }
+  }
+
+  save(){
+    return {
+      ...this,
+      facing: this.#facing,
+      debug: this.#debug,
+      animations: this.#animations,
+      current: this.#current,
+    }
+  }
+
+  async load(data){
+    Object.keys(data.animations).forEach(key => {
+      this.add(data.animations[key]);
+    });
     this.addSpriteToRender();
+    this.frame = data.frame;
+    this.facing = data.facing;
+    this.debug = data.debug;
+    this.scale.set(data.scale);
+    this.size.set(data.size);
+    this.anchor.set(data.anchor);
   }
 
   get size(){

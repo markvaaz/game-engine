@@ -60,6 +60,7 @@
     "resolve-alpn": "^1.2.1",
     "responselike": "^2.0.1",
     "roarr": "^2.15.4",
+    "safe-stable-stringify": "^2.4.3",
     "semver": "^6.3.1",
     "semver-compare": "^1.0.0",
     "serialize-error": "^7.0.1",
@@ -75,7 +76,8 @@
   "scripts": {
     "start": "electron .",
     "dev": "nodemon --exec electron .",
-    "build": "electron-builder --windows"
+    "build": "electron-builder --windows",
+    "serialize": "browserify -r serialize-javascript > serialize.js"
   },
   "author": "",
   "license": "ISC",

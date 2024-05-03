@@ -4,6 +4,8 @@ import Component from "./component.js";
 class CustomShape extends Component{
   static name = 'Shape';
   name = 'Shape';
+  fileName = 'shape';
+
   staticVertices = [];
   vertices = [];
   verticesObject = [];
@@ -45,7 +47,29 @@ class CustomShape extends Component{
     this.setListener();
   }
 
-  get centerOfMass(){ return this.getCenterOfMass(); }
+  save(){
+    return {
+      ...this,
+      type: this.#type,
+      centerOfMass: this.#centerOfMass,
+      bounds: this.#bounds,
+      borderColor: this.#borderColor,
+      color: this.#color,
+      borderWidth: this.#borderWidth,
+      opacity: this.#opacity,
+      darkZone: this.#darkZone
+    }
+  }
+
+  load(data){
+    Object.keys(data).forEach(key => {
+      if(['centerOfMass', 'bounds'].includes(key)) return;
+      this[key] = data[key];
+    });
+    this.addVertices(data.vertices, true);    
+  }
+
+  get centerOfMass(){ return this.getCenterOfMass() || this.#centerOfMass; }
   get bounds(){ return { min: this.#bounds.min.copy.add(this.GameObject.position), max: this.#bounds.max.copy.add(this.GameObject.position) } }
   get borderColor(){ return this.#borderColor }
   get color(){ return this.#color }
@@ -151,7 +175,6 @@ class CustomShape extends Component{
       this.vertices = [];
       this.verticesObject = [];
     }
-
     // Add vertices to the render object
     this.GameObject.Render.addVertices(vertices);
 
@@ -280,6 +303,7 @@ class CustomShape extends Component{
 
 class Capsule extends CustomShape{
   type = 'capsule';
+  fileName = "shape/Capsule";
   
   constructor(gameObject){
     super(gameObject);
@@ -324,6 +348,7 @@ class Capsule extends CustomShape{
 
 class Ellipse extends CustomShape{
   type = 'ellipse';
+  fileName = "shape/Ellipse";
   
   constructor(gameObject){
     super(gameObject);
@@ -352,6 +377,7 @@ class Ellipse extends CustomShape{
 
 class Polygon extends CustomShape{
   type = 'polygon';
+  fileName = "shape/Polygon";
 
   constructor(gameObject, sides = 3){
     super(gameObject);
@@ -378,6 +404,7 @@ class Polygon extends CustomShape{
 
 class Rectangle extends CustomShape{
   type = 'rectangle';
+  fileName = "shape/Rectangle";
   
   constructor(gameObject){
     super(gameObject);
@@ -401,3 +428,5 @@ class Rectangle extends CustomShape{
 }
 
 export { CustomShape, Capsule, Ellipse, Polygon, Rectangle };
+
+export default CustomShape

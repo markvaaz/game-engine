@@ -4,6 +4,8 @@ import Component from "./component.js";
 export default class Shadow extends Component{
   static name = "Shadow";
   name = "Shadow";
+  fileName = "shadow";
+
   #enabled = true;
   #opacity = 0.25;
   #blur = 0;
@@ -36,6 +38,23 @@ export default class Shadow extends Component{
       this.GameObject.Render.shadow.position = this.#position;
       this.GameObject.active = true;
     })
+  }
+
+  save() {
+    return {
+      ...this,
+      enabled: this.#enabled,
+      opacity: this.#opacity,
+      blur: this.#blur,
+      shape: this.#shape
+    }
+  }
+
+  load(data){
+    this.#enabled = data.enabled;
+    this.#opacity = data.opacity;
+    this.#blur = data.blur;
+    this.add(data.shape);
   }
 
   get enabled() {

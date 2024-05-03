@@ -6,6 +6,7 @@ class Events{
   static windowMouse = new Mouse(true);
   static mouse = new Mouse();
   static mouseWheelTimeout = 0;
+  static id = 0;
 
   /**
    * @param {boolean} value
@@ -80,7 +81,7 @@ class Events{
    * @example
    * gameEvents.dispatch("death");
    */
-  static dispatch = (event, ...args) => {
+  static dispatch = (event, data) => {
     let eventType = typeof event === "string" ? event : event.type;
 
     if(event.type === "pointermove") Events.windowMouse.setPosition(event.clientX, event.clientY, event.movementX, event.movementY);
@@ -126,14 +127,14 @@ class Events{
     }
 
     if(Events.listeners.get(eventType)){
-      Events.listeners.get(eventType).forEach(callback => callback(...args));
+      Events.listeners.get(eventType).forEach(callback => callback({ data, id: Events.id }));
     }
 
-    return Events;
+    return Events.id++;
   }
 
-  static emit(event, ...args){
-    Events.dispatch(event, ...args);
+  static emit(event, data){
+    return Events.dispatch(event, data);
   }
 
   static clear(event) {

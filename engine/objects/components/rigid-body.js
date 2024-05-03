@@ -4,6 +4,8 @@ import Component from "./component.js";
 export default class RigidBody extends Component{
   static name = 'RigidBody';
   name = 'RigidBody';
+  fileName = 'rigid-body';
+
   #static = false;
   #mass = 0;
   #inverseMass = 0;
@@ -31,13 +33,37 @@ export default class RigidBody extends Component{
     this.GameObject.size.onChange(() => this.getShapeData());
   }
 
+  save(){
+    return {
+      ...this,
+      static: this.#static,
+      mass: this.#mass,
+      inverseMass: this.#inverseMass,
+      density: this.#density,
+    }
+  }
+
+  load(data){
+    this.#static = data.static;
+    this.#mass = data.mass;
+    this.#inverseMass = data.inverseMass;
+    this.#density = data.density;
+    this.velocity.set(data.velocity);
+    this.acceleration.set(data.acceleration);
+    this.maxSpeed = data.maxSpeed;
+    this.restitution = data.restitution;
+    this.friction = data.friction;
+    this.centerOfMass.set(data.centerOfMass);
+    this.inertia = data.inertia;
+  }
+
   getShapeData() {
     const shape = this.GameObject.Shape;
 
     if (!shape) {
       throw new Error("RigidBody: No shape component found on game object.");
     }
-
+    
     this.centerOfMass = shape.centerOfMass;
     this.area = shape.getArea();
     this.#mass = this.#density * this.area;
