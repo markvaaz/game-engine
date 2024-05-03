@@ -3,6 +3,10 @@ import Vector from "../engine-components/vector.js";
 import Events from "../engine-components/events.js";
 
 export default class Camera extends GameObject{
+  fileName = "camera";
+
+  focus = false;
+
   // Setting the initial zoom factor to 0.05
   #zoomFactor = 0.05;
 
@@ -50,6 +54,8 @@ export default class Camera extends GameObject{
 
   // Setting the initial position to the current position
   initialPosition = this.position;
+
+  targetID = null;
 
   /**
    * Constructs a new instance of the Camera class.
@@ -351,6 +357,7 @@ export default class Camera extends GameObject{
    * Updates the position of the object based on its target.
    */
   updateFollow() {
+    if(this.target?.destroyed) this.target = null;
     // If there is no target or the mouse is being clicked, do nothing
     if (this.target === null && this.temporaryTarget === null || Events.windowMouse.down) {
       return;
@@ -400,7 +407,7 @@ export default class Camera extends GameObject{
    * Handles the mouse movement event.
    */
   mousemove = () => {
-    if(this.#mouseSettings.mousemove && Events.windowMouse.down && Events.windowMouse.buttons.has(2)){
+    if(this.#mouseSettings.mousemove && Events.windowMouse.down && Events.windowMouse.buttons.has(2) && this.focus){
       const movement = this.movement.copy;
 
       if(this.#mouseSettings.inverted) movement.mult(-1);
@@ -415,7 +422,7 @@ export default class Camera extends GameObject{
    * If zoom is enabled, it checks the direction of the wheel and calls the corresponding zoom function.
    */
   wheel = () => {
-    if(!this.#mouseSettings.zoom) return;
+    if(!this.#mouseSettings.zoom || !this.focus) return;
     if(Events.windowMouse.wheel.y > 0) this.zoomOutToMouse();
     else if(Events.windowMouse.wheel.y < 0) this.zoomInToMouse();
   }
@@ -452,6 +459,24 @@ export default class Camera extends GameObject{
       objectBounds.max.y >= cameraBounds.min.y &&
       objectBounds.min.y <= cameraBounds.max.y
     );
+  }
+
+  save(){
+    const save = this.toObject();
+    save.name = this.name;
+    save.targetID = this.target?.id;
+    return save;
+  }
+
+  load(data){
+    this.position.set(data.position);
+    this.size.set(data.size);
+    this.scale.set(data.scale);
+    this.bounds.min.set(data.bounds.min);
+    this.bounds.max.set(data.bounds.max);
+    this.#rotation = data.rotation;
+    this.active = data.active;
+    this.targetID = data.targetID;
   }
 
   /**

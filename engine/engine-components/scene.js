@@ -1,7 +1,9 @@
+import { circularJSON, getFileImport } from "../../utilities.js";
 import Camera from "../objects/camera.js";
 import GameObject from "../objects/game-object.js";
 import Events from "./events.js";
 import Physics from "./physics.js";
+import Vector from "./vector.js";
 
 export default class Scene{
   // Define a static property "name" with the value 'Scene'
@@ -9,12 +11,12 @@ export default class Scene{
   
   // Define an instance property "name" with the value 'Scene'
   name = 'Scene';
-  
-  // Create a new Map object to store game objects
+
+  // Stores all game objects
   GameObjects = new Map();
   
   // Create a new Map object to store objects to be rendered
-  queueToRender = new Map();
+  RenderQueue = new Map();
   
   // Create a new Map object to store cameras
   Cameras = new Map();
@@ -24,14 +26,15 @@ export default class Scene{
 
   CollisionManager = this.Physics.CollisionManager;
   
-  // Create a new Camera object with the name "Main"
-  Camera = new Camera("Main");
-  
   // Initialize the number of added objects to 0
   addedObjects = 0;
   
   // Create a new GlobalLight object with a reference to the current Scene object
-  globalLight = new GlobalLight(this);
+  GlobalLight = new GlobalLight(this);
+
+  encoder = new TextEncoder();
+
+  decoder = new TextDecoder();
 
   /**
    * Constructor for the class.
@@ -41,11 +44,69 @@ export default class Scene{
     this.Renderer = renderer;
 
     // Create a new camera object and add it to the scene.
-    this.camera = new Camera();
-    this.addCamera(this.camera);
+    this.addCamera(new Camera("main"));
 
     // Setup the renderer with the camera and global light.
-    this.Renderer.setup(this.camera, this.globalLight);
+    this.Renderer.setupScene(this.Camera, this.GlobalLight);
+  }
+
+  async save(){
+    const save = {
+      GameObjects: [],
+      GlobalLight: this.GlobalLight.toJSON(),
+      Cameras: [],
+      Camera: this.Camera.name,
+      name: this.name
+    };
+
+    for(const camera of this.Cameras.values()) {
+      save.Cameras.push(camera.save());
+    }
+
+    for(const gameObject of this.GameObjects.values()) {
+      if(!gameObject.canSave) continue;
+      const object = gameObject.save();
+
+      if(!object) continue;
+
+      save.GameObjects.push(object);
+    }
+    
+    this.savefile = this.encoder.encode(circularJSON(save));
+    console.log(this.decoder.decode(this.savefile));
+  }
+
+  async load(sceneData){
+    this.clear();
+
+    const { GameObjects, GlobalLight, Cameras } = sceneData;
+
+    this.GlobalLight.load(GlobalLight);
+
+    for(const cam of Cameras) {
+      const camera = this.getCamera(cam.name) || new Camera(cam.name);
+      
+      if(!this.getCamera(cam.name)) {
+        this.addCamera(camera);
+      }
+
+      camera.load(cam);
+    }
+
+    if(this.Camera?.name == sceneData.Camera) this.Camera = this.getCamera(sceneData.Camera);
+
+    this.name = sceneData.name;
+
+    filter(GameObjects);
+    
+    for(const gameObjectData of GameObjects) {
+      const GAMEOBJECT = await getFileImport(gameObjectData.path, gameObjectData.fileName.split("/")[0], gameObjectData.fileName.split("/")[1] || "default");
+      const gameObject = new GAMEOBJECT();
+
+      await gameObject.load(gameObjectData);
+
+      this.add(gameObject);
+    }
   }
 
   /**
@@ -67,7 +128,11 @@ export default class Scene{
    */
   addCamera(camera){
     this.Cameras.set(camera.name, camera);
-    if(!this.Camera) this.Camera = camera;
+
+    if(!this.Camera){
+      this.Camera = camera;
+      this.Camera.focus = true;
+    }
 
     camera.updateSize(this.Renderer.canvas.width, this.Renderer.canvas.height);
   }
@@ -79,7 +144,14 @@ export default class Scene{
    * @return {type} undefined
    */
   changeCamera(camera){
+    this.Camera.focus = false;
     this.Camera = this.Cameras.get(camera);
+    this.Camera.focus = true;
+    this.Renderer.updateCamera(this.Camera.toObject());
+  }
+
+  getCamera(name){
+    return this.Cameras.get(name);
   }
 
   /**
@@ -87,23 +159,26 @@ export default class Scene{
    *
    * @param {GameObject} gameObject - The game object to be added.
    */
-  add(gameObject){
+  add(gameObject, tile = false){
     if(!(gameObject instanceof GameObject)) return;
 
     this.addedObjects++;
 
-    const { updateMode, id, children } = gameObject;
-
+    const { updateMode, id } = gameObject;
     if(updateMode === "all" || updateMode === "world"){
       this.CollisionManager.add(gameObject);
     }
     
     this.GameObjects.set(id, gameObject);
+
+    if(tile){
+      gameObject.canSave = false;
+    }
     
     if(updateMode === "all" || updateMode === "render") this.Renderer.add(gameObject);
-
-    if(children.size > 0) children.forEach(child => this.add(child));
   }
+
+
 
   /**
    * Deletes a game object from the scene.
@@ -117,18 +192,13 @@ export default class Scene{
 
     gameObject.Scene = null;
 
-    this.GameObjects.delete(gameObject.id);
+    gameObject.destroy();
 
-    this.Renderer.delete(gameObject);
+    this.GameObjects.delete(gameObject.id);
 
     this.CollisionManager.delete(gameObject);
 
-    if(gameObject.children.size > 0){
-      gameObject.children.forEach(child => {
-        child.destroy();
-        this.delete(child);
-      });
-    }
+    this.RenderQueue.delete(gameObject.id);
   }
 
   /**
@@ -140,6 +210,10 @@ export default class Scene{
   has(gameObject){
     if(!(gameObject instanceof GameObject)) return;
     return this.GameObjects.has(gameObject.id);
+  }
+
+  get(id){
+    return this.GameObjects.get(id);
   }
 
 /**
@@ -160,30 +234,41 @@ export default class Scene{
    * @param {Object} gameObject - The game object to update the render information for.
    */
   updateRenderInformation(gameObject){
-    if(gameObject.active) this.queueToRender.set(gameObject.id, gameObject.Render);
-    else this.queueToRender.delete(gameObject.id);
+    if(gameObject.active) this.RenderQueue.set(gameObject.id, gameObject.Render);
+    else this.RenderQueue.delete(gameObject.id);
   }
 
   beforeUpdate = () => {
     this.Camera.beforeUpdate?.();
   }
   
-  update = () => {
+  update = async () => {
     // Update the default camera
     this.Camera.defaultUpdate?.();
     // Update the camera
     this.Camera.update?.();
+
+    for(const camera of this.Cameras.values()){
+      if(camera.targetID){
+        const target = this.GameObjects.get(camera.targetID);
+
+        if(!target) continue;
+        
+        camera.target = target;
+        camera.targetID = null;
+      }
+    }
   
     // Iterate through all game objects
     for(const gameObject of this.GameObjects.values()){
       if(gameObject.destroyed) continue;
   
-      if(gameObject.updateMode === "render"){
+      if(gameObject.updateMode === "render" && !this.Renderer.clearing){
         if(gameObject.active){
-          this.queueToRender.set(gameObject.id, gameObject.Render);
+          this.RenderQueue.set(gameObject.id, gameObject.Render);
           gameObject.active = false;
         }else{
-          this.queueToRender.delete(gameObject.id);
+          this.RenderQueue.delete(gameObject.id);
         }
  
         continue;
@@ -213,9 +298,9 @@ export default class Scene{
       this.updateRenderInformation(gameObject);
     }
 
-    this.CollisionManager.update()
+    await this.CollisionManager.update(this.Camera)
     // Update the renderer with the queue of objects to render
-    this.Renderer.update(this.queueToRender);
+    this.Renderer.update(this.RenderQueue);
   }
 
   /**
@@ -235,8 +320,17 @@ export default class Scene{
    * @return {undefined} This function does not return a value.
    */
   render = () => {
+    if(this.Renderer.clearing) return;
     this.Renderer.updateCamera(this.Camera.toObject());
     this.Renderer.render();
+  }
+
+  clear(){
+    for(const gameObject of this.GameObjects.values()){
+      this.delete(gameObject);
+    }
+
+    this.Renderer.clear();
   }
 }
 
@@ -249,10 +343,10 @@ class GlobalLight {
 
   /**
    * Creates a new GlobalLight instance.
-   * @param {Scene} scene - The scene to which the light belongs.
+   * @param {Scene} Scene - The scene to which the light belongs.
    */
-  constructor(scene) {
-    this.scene = scene;
+  constructor(Scene) {
+    this.Scene = Scene;
   }
 
   /**
@@ -278,7 +372,7 @@ class GlobalLight {
   set color(color) {
     this.#color = color;
     // Update the light in the renderer
-    this.scene.Renderer.updateLight(this.#color, this.#brightness);
+    this.Scene.Renderer.updateLight(this.#color, this.#brightness);
   }
 
   /**
@@ -288,6 +382,36 @@ class GlobalLight {
   set brightness(brightness) {
     this.#brightness = brightness;
     // Update the light in the renderer
-    this.scene.Renderer.updateLight(this.#color, this.#brightness);
+    this.Scene.Renderer.updateLight(this.#color, this.#brightness);
+  }
+
+  load(data){
+    this.color = data.color;
+    this.brightness = data.brightness;
+  }
+
+  toJSON(){
+    return {
+      color: this.color,
+      brightness: this.brightness
+    }
+  }
+}
+
+function filter(obj) {
+  if (typeof obj === 'object') {
+    for (const key in obj) {
+      if(obj[key] == "[Circular]" || key == "GameObject"){
+        delete obj[key];
+        continue;
+      }
+      if(obj[key]?.x != null && obj[key]?.y != null){
+        obj[key] = new Vector(obj[key].x, obj[key].y);
+      } else if (typeof obj[key] === 'object') {
+        filter(obj[key]);
+      }
+    }
+  } else if (Array.isArray(obj)) {
+    obj.forEach(item => filter(item));
   }
 }

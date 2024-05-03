@@ -18,6 +18,7 @@
     "define-data-property": "^1.1.1",
     "define-properties": "^1.2.1",
     "detect-node": "^2.1.0",
+    "dotenv": "^16.4.1",
     "end-of-stream": "^1.4.4",
     "env-paths": "^2.2.1",
     "es6-error": "^4.1.1",
@@ -59,6 +60,7 @@
     "resolve-alpn": "^1.2.1",
     "responselike": "^2.0.1",
     "roarr": "^2.15.4",
+    "safe-stable-stringify": "^2.4.3",
     "semver": "^6.3.1",
     "semver-compare": "^1.0.0",
     "serialize-error": "^7.0.1",
@@ -73,7 +75,9 @@
   },
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --windows"
+    "dev": "nodemon --exec electron .",
+    "build": "electron-builder --windows",
+    "serialize": "browserify -r serialize-javascript > serialize.js"
   },
   "author": "",
   "license": "ISC",

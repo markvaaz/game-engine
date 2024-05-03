@@ -4,7 +4,6 @@ import LightingManager from "../lighting-manager.js";
 class RendererWorker{
   frameCount = -1;
   layers = new Map();
-  gameObjects = new Map();
   camera = null;
   antiAliasing = false;
   LightingManager = new LightingManager(this);
@@ -71,9 +70,13 @@ class RendererWorker{
        * Updates the global light.
        * @param {Object} data - The data object containing the global light.
        */
-      updateLight: data => this.updateGlobalLight(data)
-    };
+      updateLight: data => this.updateGlobalLight(data),
 
+      setupScene: (data) => this.setupScene(data),
+
+      clear: () => this.clear()
+    };
+    
     if(actions[event.data.action]) actions[event.data.action](event.data);
   };
 
@@ -82,11 +85,15 @@ class RendererWorker{
   }
 
   delete({ gameObject }){
-    if(!this.layers.has(gameObject.layer)) return;
+    const { layer, id } = gameObject;
 
-    this.layers.get(gameObject.layer).delete(gameObject.id);
+    this.LightingManager.delete(id);
 
-    if(this.layers.get(gameObject.layer).size === 0) this.layers.delete(gameObject.layer);
+    if(!this.layers.has(layer)) return; 
+
+    this.layers.get(layer).delete(id);
+
+    if(this.layers.get(layer).size === 0) this.layers.delete(layer);
   }
 
   update({ gameObjects }){
@@ -94,11 +101,13 @@ class RendererWorker{
   }
 
   updateVisibility(gameObject) {
+    if(!gameObject.shape) return;
     const bounds = gameObject.shape.bounds || gameObject.transform.bounds;
     const offset = 200 + (gameObject.lightSource ? (gameObject.lightSource.radius * 2 + gameObject.lightSource.distance) : 0);
     const cameraBounds = this.camera.bounds;
-    const isWithinXBounds = bounds.max.x >= cameraBounds.min.x - offset && bounds.min.x <= cameraBounds.max.x + (offset * 2);
-    const isWithinYBounds = bounds.max.y >= cameraBounds.min.y - offset && bounds.min.y <= cameraBounds.max.y + (offset * 2);
+    const position = gameObject.transform.position;
+    const isWithinXBounds = bounds.max.x + position.x >= cameraBounds.min.x - offset && bounds.min.x + position.x <= cameraBounds.max.x + (offset * 2);
+    const isWithinYBounds = bounds.max.y + position.y >= cameraBounds.min.y - offset && bounds.min.y + position.y <= cameraBounds.max.y + (offset * 2);
     
     gameObject.visible = isWithinXBounds && isWithinYBounds;
     if(gameObject.lightSource != null){
@@ -115,8 +124,10 @@ class RendererWorker{
   }
 
   setLayer(gameObject) {
-    const { layer, id, lightSource, shadow } = gameObject;
-    const darkZone = gameObject.shape?.darkZone;
+    const { layer, id, lightSource, shadow, destroyed } = gameObject;
+
+    if (destroyed) return this.delete({ gameObject });
+
     let layerAdded = false;
 
     // Add the layer if it doesn't exist
@@ -132,7 +143,7 @@ class RendererWorker{
       }
     }
 
-    if(!darkZone){
+    if(!gameObject.shape?.darkZone){
       const currentLayer = this.layers.get(layer);
       this.LightingManager.darkZones.delete(id);
       
@@ -172,17 +183,25 @@ class RendererWorker{
     this.layers = new Map([...this.layers.entries()].sort((a, b) => a[0] - b[0]));
   }
 
-  clear(){
+  clearCanvas(){
     const tearingFix = 100;
     const { position, size } = this.camera;
 
     this.context.clearRect(position.x - tearingFix, position.y -tearingFix, size.x + (tearingFix * 2), size.y + (tearingFix * 2));
   }
 
+  clear(){
+    this.layers.forEach(layer => {
+      layer.forEach(gameObject => {
+        this.delete({ gameObject });
+      });
+    });
+
+    self.postMessage({ action: "cleared" });
+  }
+
   translate(){
     const { context } = this;
-
-    if(!this.camera.active) return;
 
     const { position, scale, rotation } = this.camera;
     
@@ -199,9 +218,9 @@ class RendererWorker{
 
   async render(){
     this.context.imageSmoothingEnabled = this.antiAliasing;
-    this.clear();
+    this.clearCanvas();
     this.translate();
-
+    
     for(const layer of this.layers.values()){
       for(const gameObject of layer.values()){
         this.updateVisibility(gameObject);
@@ -227,8 +246,9 @@ class RendererWorker{
   }
 
   async renderSprite(gameObject) {
+    if(!gameObject.sprite) return;
     if(gameObject.sprite && gameObject.sprite.src == null) return;
-
+    
     const { anchor, size: spriteSize, slice, scale, debug, direction } = gameObject.sprite; // the position and size of the portion that will be rendered
     const { position: gameObjectPosition, size: gameObjectSize } = gameObject.transform; // the position of the game object
     const bitmap = await SpriteManager.get(gameObject.sprite.src);
@@ -245,7 +265,7 @@ class RendererWorker{
     context.translate(gameObjectPosition.x, gameObjectPosition.y);
     context.rotate(gameObject.transform.rotation);
     context.scale(direction, 1);
-
+    
     context.drawImage(
       bitmap,
       slice.x, slice.y, sliceWidth, sliceHeight,
@@ -370,7 +390,6 @@ class RendererWorker{
   }
 
   setup({ canvas, camera, globalLight, antiAliasing }){
-    this.camera = camera;
     this.canvas = canvas;
     this.context = this.canvas.getContext('2d');
     this.context.imageSmoothingEnabled = antiAliasing;
@@ -379,6 +398,10 @@ class RendererWorker{
     this.LightingManager.canvas.height = this.canvas.height;
     this.LightingManager.cacheCanvas.width = this.canvas.width;
     this.LightingManager.cacheCanvas.height = this.canvas.height;
+  }
+
+  setupScene({ camera, globalLight }){
+    this.camera = camera;
     this.updateGlobalLight(globalLight);
   }
 

@@ -1,21 +1,30 @@
-import DynamicSpatialHash from "./dynamic-spatial-hash.js";
-import Events from "./events.js";
-import Time from "./time.js";
-import Vector from "./vector.js";
+import DynamicSpatialHash from "../dynamic-spatial-hash.js";
+import Vector from "../vector.js";
 
 export default class SAT{
   GameObjects = new Map();
   Collisions = new Set();
   SpatialHash = new DynamicSpatialHash(64);
-  iterations = 2;
+  iterations = 10;
   collisionInformation = { collided: false, normal: new Vector(), overlap: Infinity, tangent: new Vector(), penetration: new Vector(), axis: new Vector(), center: new Vector(), vertexA: new Vector(), vertexB: new Vector() };
 
-  constructor({ cellSize = 64 } = {}){
-    this.SpatialHash.cellSize = cellSize;
+  constructor(){
+    self.onmessage = this.onmessage;
+  }
+
+  onmessage = (event) => {
+    const actions = {
+      update: (event) => this.update(event),
+      init: (event) => console.log("init"),
+    }
+    if(actions[event.data.action]) actions[event.data.action](event.data);
+  }
+
+  init({id}){
+    this.id = id;
   }
 
   add(gameObject){
-    if(!gameObject.components.get("Collider")) return;
     this.GameObjects.set(gameObject.id, gameObject);
     this.SpatialHash.add(gameObject);
   }
@@ -25,14 +34,17 @@ export default class SAT{
     this.SpatialHash.delete(gameObject);
   }
 
-  update(){
+  update({ gameObjects }){
+    this.SpatialHash.clearAll();
+    this.GameObjects.clear();
+    this.Collisions.clear();
+    for(const gameObject of gameObjects){
+      this.add(gameObject);
+    }
     this.checkCollisions();
   }
 
   updateHash(gameObject){
-    if(gameObject.destroyed) return this.SpatialHash.delete(gameObject);
-    if(!gameObject.Collider || !gameObject.active) return;
-
     this.SpatialHash.update(gameObject);
   }
 
@@ -43,7 +55,6 @@ export default class SAT{
     
     for(const gameObjectA of this.GameObjects.values()){
       this.updateHash(gameObjectA);
-      if(!gameObjectA.Collider || !gameObjectA.Collider.enabled || !gameObjectA.active) continue;
       const query = this.SpatialHash.query(gameObjectA);
 
       for(const gameObjectB of query){
@@ -57,52 +68,17 @@ export default class SAT{
         
         this.Collisions.add(`${gameObjectA.id}-${gameObjectB.id}`);
         this.solveCollision(collision);
-        
       }
     }
+
+    this.emitCollisions();
+  }
+
+  emitCollisions(){
+    self.postMessage({ action: "updateObjects", gameObjects:Array.from(this.GameObjects.values()) });
   }
 
   solveCollision(collision){
-    const { gameObjectA, gameObjectB } = collision;
-    const thisType = gameObjectA.type;
-    const otherType = gameObjectB.type;
-
-    /* ---- Filters start ---- */
-    
-    // Check if the object has specific collision restrictions
-    if(gameObjectA.Collider.ignoredCollisions.has(otherType) || gameObjectA.Collider.ignoredCollisions.has(gameObjectB)){
-      this.Collisions.delete(collision.id);
-      return;
-    }
-
-    if(gameObjectB.Collider.ignoredCollisions.has(thisType) || gameObjectB.Collider.ignoredCollisions.has(gameObjectA)){
-      this.Collisions.delete(collision.id);
-      return;
-    }
-
-    // Check if the object can only collide with certain types of objects
-    if(gameObjectA.collidesOnlyWith.size > 0 && !(gameObjectA.collidesOnlyWith.has(otherType) || gameObjectA.collidesOnlyWith.has(gameObjectB))){
-      this.Collisions.delete(collision.id);
-      return;
-    }
-
-    if(gameObjectB.collidesOnlyWith.size > 0 && !(gameObjectB.collidesOnlyWith.has(thisType) || gameObjectB.collidesOnlyWith.has(gameObjectA))){
-      this.Collisions.delete(collision.id);
-      return;
-    }
-
-    gameObjectA.Collider.dispatch(collision);
-    gameObjectB.Collider.dispatch(collision);
-    Events.dispatch("collision", collision);
-
-    // Check if either object is a trigger or has trigger-only collisions
-    if(gameObjectA.Collider.trigger || gameObjectB.Collider.trigger || gameObjectA.triggerOnlyCollisions.has(otherType) || gameObjectA.triggerOnlyCollisions.has(gameObjectB) || gameObjectB.Collider.triggerOnlyCollisions.has(thisType) || gameObjectB.Collider.triggerOnlyCollisions.has(gameObjectA)){
-      this.Collisions.delete(collision.id);
-      return;
-    }
-
-    /* ---- Filters end ---- */
-
     this.separate(collision);
   }
 
@@ -125,8 +101,15 @@ export default class SAT{
     const separationVectorB = direction.mult(separationFactorB);
 
     // Move the objects based on the separation vectors
-    if(!gameObjectA.RigidBody.static) gameObjectA.position.add(separationVectorA);
-    if(!gameObjectB.RigidBody.static) gameObjectB.position.add(separationVectorB);
+    if(!gameObjectA.RigidBody.static){
+      gameObjectA.Shape.centerOfMass.x += separationVectorA.x;
+      gameObjectA.Shape.centerOfMass.y += separationVectorA.y;
+    }
+
+    if(!gameObjectB.RigidBody.static){
+      gameObjectB.Shape.centerOfMass.x += separationVectorB.x;
+      gameObjectB.Shape.centerOfMass.y += separationVectorB.y;
+    }
   }
 
   /**
@@ -137,14 +120,7 @@ export default class SAT{
    * @returns {MTV} - Object containing the collision information.
    */
   getCollisionInformation(gameObjectA, gameObjectB) {
-    if(
-      gameObjectA === gameObjectB ||
-      !gameObjectA.Collider.enabled ||
-      !gameObjectB.Collider.enabled ||
-      // AABB collision check to avoid unnecessary calculations
-      !gameObjectA.Shape.isWithinBounds(gameObjectB.Shape.bounds, 1)
-    ) return { collided: false };
-    
+    if(!this.isWithinBounds(gameObjectA.Shape.bounds, gameObjectB.Shape.bounds, 1)) return { collided: false };
     const CI = this.collisionInformation;
 
     // Reset the collision information
@@ -181,6 +157,16 @@ export default class SAT{
     }
 
     return CI;
+  }
+
+  isWithinBounds = (boundsA, boundsB, expansionAmount = 0) => {
+    // If bounds is falsy, return false
+    if(!boundsB) return false;
+    // Check if the current bounds are within the given bounds
+    return boundsA.min.x - expansionAmount < boundsB.max.x && 
+           boundsA.max.x + expansionAmount > boundsB.min.x && 
+           boundsA.min.y - expansionAmount < boundsB.max.y && 
+           boundsA.max.y + expansionAmount > boundsB.min.y;
   }
 
   /**
@@ -273,7 +259,6 @@ export default class SAT{
   }
 }
 
-
 class Collision{
   gameObjectA = null;
   gameObjectB = null;
@@ -297,3 +282,5 @@ class Collision{
     this.collided = collided;
   }
 }
+
+new SAT();

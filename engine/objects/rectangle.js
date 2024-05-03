@@ -1,9 +1,11 @@
 import Collider from "./components/collider.js";
 import RigidBody from "./components/rigid-body.js";
-import RectangleShape from "./components/shapes/rectangle-shape.js";
+import { Rectangle as RectangleShape } from "./components/shape.js";
 import GameObject from "./game-object.js";
 
 export default class Rectangle extends GameObject {
+  fileName = "rectangle";
+  
   constructor(width, height) {
     super();
 

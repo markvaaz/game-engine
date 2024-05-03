@@ -5,6 +5,7 @@ export default class LightSource extends Component{
   // Define a class named LightSource
   static name = 'LightSource';
   name = 'LightSource';
+  fileName = 'light-source';
 
   // Define an array of available blending modes
   #modes = [ "lighter", "source-in", "source-out", "source-over", "source-atop", "destination-over", "destination-in", "destination-out", "destination-atop", "copy", "xor", "multiply", "screen", "overlay", "darken", "lighten", "color-dodge", "color-burn", "hard-light", "soft-light", "difference", "exclusion", "hue", "saturation", "color", "luminosity"];
@@ -33,9 +34,6 @@ export default class LightSource extends Component{
     { start: 1, color: "rgba(255, 255, 255)" }
   ];
 
-  // Create a new Oscillation object
-  #oscillation = new Oscillation(this);
-
   // Set #enabled to true by default
   #enabled = true;
 
@@ -58,24 +56,7 @@ export default class LightSource extends Component{
     this.GameObject = GameObject;
 
     // Set up the light source object in the GameObject's Render component
-    this.GameObject.Render.lightSource = {
-      enabled: this.#enabled,
-      mode: this.#mode,
-      brightness: this.#brightness,
-      radius: radius,
-      type: this.#type,
-      position: this.GameObject.position.toObject(),
-      steps: [
-        { start: 0, color: "transparent" },
-        { start: 1, color: "#fff" }
-      ],
-      angle: this.#angle,
-      distance: this.#distance,
-      bounds: {
-        min: { x:0, y:0 },
-        max: { x:0, y:0 }
-      }
-    };
+    this.addToRender();
 
     this.GameObject.active = true; //Sets the object as active so it is updated on render
 
@@ -90,6 +71,32 @@ export default class LightSource extends Component{
 
     // Update the position of the light source in the Render component when the position changes
     this.position.onChange(() => this.GameObject.Render.lightSource.position = this.position.toObject());
+  }
+
+  save(){
+    return {
+      ...this,
+      mode: this.#mode,
+      radius: this.#radius,
+      brightness: this.#brightness,
+      type: this.#type,
+      steps: this.#steps,
+      enabled: this.#enabled,
+      angle: this.#angle,
+      distance: this.#distance
+    }
+  }
+
+  load(data){
+    this.mode = data.mode;
+    this.radius = data.radius;
+    this.brightness = data.brightness;
+    this.type = data.type;
+    this.clear();
+    this.add(data.steps, true);
+    this.enabled = data.enabled;
+    this.angle = data.angle;
+    this.distance = data.distance;
   }
 
   /**
@@ -240,14 +247,6 @@ export default class LightSource extends Component{
     return this.#steps;
   }
 
-  /**
-   * Get the value of the `oscillation` property.
-   *
-   * @return {type} The value of the `oscillation` property.
-   */
-  get oscillation(){
-    return this.#oscillation;
-  }
 
   /**
    * Retrieves the value of the 'enabled' property.
@@ -281,10 +280,10 @@ export default class LightSource extends Component{
    * @throws {Error} - If step start is not a number.
    * @throws {Error} - If step color is not provided.
    */
-  add(step) {
+  add(step, dontInvert = false) {
     // If step is an array, add each step recursively
     if (step instanceof Array) {
-      return step.forEach(step => this.add(step));
+      return step.forEach(step => this.add(step, dontInvert));
     }
 
     // Validate step object properties
@@ -305,7 +304,7 @@ export default class LightSource extends Component{
     }
 
     // Invert step start value
-    step.start = 1 - step.start;
+    if(!dontInvert) step.start = 1 - step.start;
 
     if(step.color === "transparent") step.color = "rgba(100, 100, 100, 0)";
 
@@ -346,6 +345,26 @@ export default class LightSource extends Component{
     this.GameObject.Render.lightSource.bounds.max.y = maxY;
   }
   
+  addToRender(){
+    this.GameObject.Render.lightSource = {
+      enabled: this.#enabled,
+      mode: this.#mode,
+      brightness: this.#brightness,
+      radius: 0,
+      type: this.#type,
+      position: this.GameObject.position.toObject(),
+      steps: [
+        { start: 0, color: "transparent" },
+        { start: 1, color: "#fff" }
+      ],
+      angle: this.#angle,
+      distance: this.#distance,
+      bounds: {
+        min: { x:0, y:0 },
+        max: { x:0, y:0 }
+      }
+    };
+  }
 
   /**
    * Clears the steps array, sets the steps for the light source, and activates the game object.
@@ -354,60 +373,5 @@ export default class LightSource extends Component{
     this.#steps = [];
     this.GameObject.Render.lightSource.steps = this.#steps;
     this.GameObject.active = true; //Sets the object as active so it is updated on render 
-  }
-}
-
-class Oscillation{
-  #enabled = true;
-  #min = 0;
-  #max = 1;
-  #speed = 0.02;
-
-  constructor(lightSource){
-    this.lightSource = lightSource;
-  }
-
-  get enabled(){
-    return this.#enabled;
-  }
-
-  set enabled(enabled){
-    if(this.#enabled === enabled) return;
-    this.#enabled = enabled;
-    this.lightSource.GameObject.Render.lightSource.oscillation.enabled = enabled;
-    this.lightSource.GameObject.active = true;
-  }
-
-  get min(){
-    return this.#min;
-  }
-
-  set min(min){
-    if(isNaN(min)) throw new Error("LightSource: min must be a number.");
-    this.#min = min;
-    this.lightSource.GameObject.Render.lightSource.oscillation.min = min;
-    this.lightSource.GameObject.active = true;
-  }
-
-  get max(){
-    return this.#max;
-  }
-
-  set max(max){
-    if(isNaN(max)) throw new Error("LightSource: max must be a number.");
-    this.#max = max;
-    this.lightSource.GameObject.Render.lightSource.oscillation.max = max;
-    this.lightSource.GameObject.active = true;
-  }
-
-  get speed(){
-    return this.#speed;
-  }
-
-  set speed(speed){
-    if(isNaN(speed)) throw new Error("LightSource: speed must be a number.");
-    this.#speed = speed;
-    this.lightSource.GameObject.Render.lightSource.oscillation.speed = speed;
-    this.lightSource.GameObject.active = true;
   }
 }

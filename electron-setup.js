@@ -1,19 +1,34 @@
-import { app, BrowserWindow, globalShortcut, screen } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import path, { dirname, join } from 'path';
+import dotenv from 'dotenv';
+
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = true;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 let mainWindow;
+
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    darkTheme: true
+    width: 720,
+    height: 1024,
+    x: -1200,
+    y: 0,
+    darkTheme: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    },
+    ELECTRON_DISABLE_SECURITY_WARNINGS: true
   });
 
   mainWindow.setMenuBarVisibility(false);
 
-  mainWindow.loadFile(join(__dirname, 'index.html'));
+  // mainWindow.webContents.openDevTools();
+  
+  mainWindow.maximize();
+
+  mainWindow.loadFile(join(__dirname, '/index.html'));
 
   // mainWindow.loadURL('http://localhost:5500');
 

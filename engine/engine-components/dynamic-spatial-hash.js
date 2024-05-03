@@ -12,8 +12,6 @@
  * @see {@link https://github.com/markvaaz} GitHub
  */
 
-import Vector from "./vector.js";
-
 export default class DynamicSpatialHash{
   #cellSize = 32;
   #invertedCellSize = 1 / 32;
@@ -141,6 +139,7 @@ export default class DynamicSpatialHash{
    * - Removes the  object from the old hashes and adds it to the new hashes
    */
   update(object){
+    if(!object || !object.__spatialHashes) return;
     this.delete(object).add(object);
   }
 

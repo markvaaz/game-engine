@@ -5,6 +5,8 @@ export default class Render extends Component{
   static name = "Render";
   // Specifies the name property of the Render class
   name = "Render";
+  fileName = "render";
+
   // Specifies the opacity of the rendered object (default is 1)
   opacity = 1;
   // Specifies the global composite operation to be used for rendering (default is "source-over")
@@ -99,6 +101,12 @@ export default class Render extends Component{
     //   this.transform.velocity.x = vector.x;
     //   this.transform.velocity.y = vector.y;
     // });
+  }
+
+  save(){
+    return {
+      ...this
+    };
   }
 
   /**

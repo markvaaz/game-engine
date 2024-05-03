@@ -889,7 +889,7 @@ export default class Vector{
    * @returns {string} The JSON representation of the vector.
    */
   toJSON(){
-    return JSON.stringify(this.toObject());
+    return { x: this.x, y: this.y, type: 'Vector' };
   }
 
   toConsole(name){

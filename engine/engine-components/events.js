@@ -6,6 +6,7 @@ class Events{
   static windowMouse = new Mouse(true);
   static mouse = new Mouse();
   static mouseWheelTimeout = 0;
+  static id = 0;
 
   /**
    * @param {boolean} value
@@ -80,22 +81,10 @@ class Events{
    * @example
    * gameEvents.dispatch("death");
    */
-  static dispatch = (event, ...args) => {
+  static dispatch = (event, data) => {
     let eventType = typeof event === "string" ? event : event.type;
 
-    if(event.type === "pointerdown"){
-      Events.windowMouse.down = true;
-      Events.mouse.down = true;
-      Events.windowMouse.buttons.add(event.button);
-      Events.mouse.buttons.add(event.button);
-    }
-    if(event.type === "pointerup"){
-      Events.windowMouse.down = false;
-      Events.mouse.down = false;
-      Events.windowMouse.buttons.delete(event.button);
-      Events.mouse.buttons.delete(event.button);
-    }
-    if(event.type === "pointermove") Events.windowMouse.setPosition(event.offsetX, event.offsetY, event.movementX, event.movementY);
+    if(event.type === "pointermove") Events.windowMouse.setPosition(event.clientX, event.clientY, event.movementX, event.movementY);
     if(event.type === "wheel"){
       Events.windowMouse.wheel.x = event.deltaX;
       Events.windowMouse.wheel.y = event.deltaY;
@@ -111,6 +100,19 @@ class Events{
         Events.mouse.wheel.y = 0;
       }, 100);
     }
+
+    if(event.type === "pointerdown" && event?.target.tagName === "CANVAS"){
+      Events.windowMouse.down = true;
+      Events.mouse.down = true;
+      Events.windowMouse.buttons.add(event.button);
+      Events.mouse.buttons.add(event.button);
+    }
+    if(event.type === "pointerup" && event?.target.tagName === "CANVAS"){
+      Events.windowMouse.down = false;
+      Events.mouse.down = false;
+      Events.windowMouse.buttons.delete(event.button);
+      Events.mouse.buttons.delete(event.button);
+    }
     if(event.type === "keydown"){
       Events.keys.add(event.key);
       Events.keys.add(event.code);
@@ -125,14 +127,14 @@ class Events{
     }
 
     if(Events.listeners.get(eventType)){
-      Events.listeners.get(eventType).forEach(callback => callback(...args));
+      Events.listeners.get(eventType).forEach(callback => callback({ data, id: Events.id }));
     }
 
-    return Events;
+    return Events.id++;
   }
 
-  static emit(event, ...args){
-    Events.dispatch(event, ...args);
+  static emit(event, data){
+    return Events.dispatch(event, data);
   }
 
   static clear(event) {
@@ -263,7 +265,7 @@ class Events{
 
 ["input", "keydown", "keyup", "click", "pointerdown", "pointerup", "pointermove", "mousedown", "mouseup", "mousemove", "wheel", "touchend", "touchstart", "touchmove", "resize"].forEach(event => {
   Events.listeners.set(event, new Set());
-  window.addEventListener(event, Events.dispatch);
+  addEventListener(event, Events.dispatch);
 });
 
 addEventListener("pointerlockchange", () => {

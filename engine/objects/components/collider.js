@@ -1,12 +1,12 @@
+import Vector from "../../engine-components/vector.js";
 import Component from "./component.js";
 import RigidBody from "./rigid-body.js";
 
 export default class Collider extends Component{
   // Define a variable 'name' and assign it the value "Collider"
   name = "Collider";
-
-  // Define a static property 'name' and assign it the value "Collider"
   static name = "Collider";
+  fileName = "collider";
 
   // Create a new empty set 'collisions'
   collisions = new Set();
@@ -32,6 +32,20 @@ export default class Collider extends Component{
       // If it doesn't, add a new RigidBody component to the GameObject
       this.GameObject.add(RigidBody);
     }
+  }
+
+  save(){
+    return {
+      ...this
+    }
+  }
+
+  async load(data){
+    Object.keys(data).forEach(key => {
+      if(this[key] && this[key] instanceof Vector) return this[key].set(data[key]);
+
+      this[key] = data[key];
+    });
   }
 
   get collidesOnlyWith(){ return this.GameObject.collidesOnlyWith; }

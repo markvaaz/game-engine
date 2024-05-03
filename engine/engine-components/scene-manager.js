@@ -1,3 +1,4 @@
+import Events from "./events.js";
 import Renderer from "./renderer.js";
 import Scene from "./scene.js";
 
@@ -5,6 +6,20 @@ export default class SceneManager {
   scenes = new Map();
   Renderer = new Renderer();
   #currentScene = null;
+
+  constructor(){
+    Events.on("loadScene", async event => {
+      const { data, id } = event;
+      
+      const scene = await this.loadScene(data);
+
+      Events.emit("sceneLoaded", { id, scene });
+    });
+
+    Events.on("addObject", (event) => {
+      this.currentScene.add(event.data);
+    })
+  }
 
   /**
    * Creates a new scene and adds it to the renderer.
@@ -55,11 +70,27 @@ export default class SceneManager {
    * @return {type} description of return value
    */
   setup(){
+    this.Renderer.setupCanvas();
     this.scenes.forEach(scene => {
       scene.setup(this.Renderer.canvas);
     });
   }
 
+  async loadScene(path){
+    const json = await (await import(__dirname + "/" + path, { assert: { type: "json" } })).default;
+    
+    if(!json.name) return;
+
+    const scene = this.scenes.get(json.name) || new Scene(this.Renderer);
+
+    await scene.load(json);
+
+    this.addScene(scene);
+
+    if(!this.#currentScene) this.changeScene(scene.name);
+
+    return scene;
+  }
 
   beforeUpdate = () => {
     // Calls the beforeUpdate function of the current scene, if it exists
@@ -82,6 +113,7 @@ export default class SceneManager {
   }
 
   afterUpdate = () => {
+    if(this.#currentScene == null) return;
     // Executes the beforeRender method.
     this.beforeRender();
 
